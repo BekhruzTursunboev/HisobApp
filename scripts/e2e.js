@@ -169,6 +169,28 @@ try {
   });
   ok("rejects an over-long note", longNote.status === 400, longNote.status);
 
+  console.log("\n── pairing: two devices, one code ──");
+  // This is what the pairing code buys. Device B adopts A's key and must see
+  // A's history, and anything B writes must come back to A.
+  const laptop = alice;   // same key, different "device"
+
+  const fromLaptop = await call("/api/sync", { token: laptop, body: {} });
+  ok("second device sees the first device's entries",
+     fromLaptop.json.entries.some((e) => e.id === e1), fromLaptop.json.entries?.length);
+
+  const e4 = crypto.randomUUID();
+  await call("/api/sync", {
+    token: laptop,
+    body: { changes: [{ id: e4, amount: 7, category: "coffee", ways: 1,
+                        paidByMe: true, spentAt, note: "written on the laptop" }] }
+  });
+  const backOnPhone = await call("/api/sync", { token: alice, body: {} });
+  ok("what the second device writes reaches the first",
+     backOnPhone.json.entries.some((e) => e.id === e4 && e.note === "written on the laptop"));
+
+  ok("a different key is a different account",
+     (await call("/api/sync", { token: bob, body: {} })).json.entries.every((e) => e.id !== e4));
+
   console.log("\n── shared bill ──");
   const mk = await call("/api/split", {
     token: alice, body: { total: 200, ways: 4, note: "dinner" }

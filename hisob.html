@@ -254,6 +254,21 @@
   .minor.danger { color: var(--over); }
   .trio { display: flex; flex-direction: column; gap: 9px; }
 
+  .code {
+    font-family: var(--mono); font-size: 13px; font-weight: 500;
+    line-height: 1.7; letter-spacing: 0.04em; word-break: break-all;
+    color: var(--ink); background: var(--well);
+    border: 1px solid var(--line); border-radius: var(--r1);
+    padding: 13px 14px; margin: 0;
+    user-select: all; -webkit-user-select: all;
+  }
+  .code[hidden] { display: none; }
+
+  .warn {
+    font-family: var(--mono); font-size: 11px; line-height: 1.6;
+    color: var(--over); margin: 0;
+  }
+
 
   /* ═══════ insights ═══════ */
 
@@ -686,6 +701,22 @@
 
     <div class="glass card pad">
       <div class="trio">
+        <span class="lab">Use on another device</span>
+        <p class="foot" style="text-align:left;margin:0">
+          Your account is this code. Show it on one device, enter it on another,
+          and both keep the same entries.
+        </p>
+        <button class="minor" id="b-show" type="button">Show my code</button>
+        <p class="code" id="codebox" hidden></p>
+        <p class="warn" id="codewarn" hidden>
+          Anyone with this code can read and change your entries. Do not post it.
+        </p>
+        <button class="minor" id="b-enter" type="button">Enter a code from another device</button>
+      </div>
+    </div>
+
+    <div class="glass card pad">
+      <div class="trio">
         <span class="lab">Your data</span>
         <button class="minor" id="b-download" type="button" hidden>Save a backup file</button>
         <button class="minor" id="b-backup" type="button">Copy a backup</button>
@@ -977,6 +1008,9 @@
 
     return {
       start: function () { if (on) run(); },
+      // pairing needs an immediate sync, and must be able to restart a session
+      // that switched itself off after a 401 under the previous key
+      now: function () { on = /^https?:$/.test(location.protocol); ready = false; return run(); },
       soon: function () { if (!on) return; clearTimeout(timer); timer = setTimeout(run, 1200); },
       enabled: function () { return on; }
     };
@@ -1449,6 +1483,60 @@
     $("i-rate").value = db.rate || "";
     renderAll(true);
     flash("Restored " + db.items.length + " entries", false);
+  });
+
+  // ── pairing ──
+  //
+  // The device key is the account. There are no passwords to forget or phish,
+  // and no third-party sign-in — Google's is blocked in China, which is where
+  // these users are. Showing the key on one device and entering it on another
+  // is the whole of "log in on my laptop".
+
+  function groups(key) {
+    return (key.match(/.{1,8}/g) || []).join(" ");
+  }
+
+  $("b-show").addEventListener("click", function () {
+    if (!db.deviceKey) { db.deviceKey = newDeviceKey(); save(); }
+    var box = $("codebox");
+    if (!box.hidden) {                       // second tap hides it again
+      box.hidden = true; $("codewarn").hidden = true;
+      $("b-show").textContent = "Show my code";
+      return;
+    }
+    box.textContent = groups(db.deviceKey);
+    box.hidden = false;
+    $("codewarn").hidden = false;
+    $("b-show").textContent = "Hide my code";
+    copyText(db.deviceKey, function () { flash("Code copied", false); });
+  });
+
+  $("b-enter").addEventListener("click", function () {
+    var raw = window.prompt("Paste the code from your other device:");
+    if (!raw) return;
+
+    var key = raw.replace(/\s+/g, "");
+    if (!/^[A-Za-z0-9_-]{32,128}$/.test(key)) {
+      flash("That does not look like a code", false);
+      return;
+    }
+    if (key === db.deviceKey) { flash("This device already uses that code", false); return; }
+
+    var mine = db.items.length;
+    var msg = mine
+      ? "Join that account?\n\nThe " + mine + " entr" + (mine === 1 ? "y" : "ies") +
+        " on this device will be merged into it."
+      : "Join that account and pull its entries onto this device?";
+    if (!window.confirm(msg)) return;
+
+    // Adopt the key, keep local entries but mark them for upload, and rewind
+    // the cursor so everything on the server comes down.
+    db.deviceKey = key;
+    db.cursor = null;
+    db.items.forEach(function (i) { i.dirty = true; });
+    save();
+    flash("Joined — syncing", false);
+    SYNC.now();
   });
 
   $("b-erase").addEventListener("click", function () {
