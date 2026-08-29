@@ -184,6 +184,7 @@
     display: flex; align-items: baseline; justify-content: center; gap: 3px;
   }
   .figure .cur { font-size: 0.42em; font-weight: 600; color: var(--muted); letter-spacing: -0.02em; }
+  .figure.after .cur, .amt.after .cur { order: 2; margin-left: 2px; }
   .figure.over { color: var(--over); }
   .figure.pop { animation: pop 0.44s cubic-bezier(0.3, 1.5, 0.5, 1); }
   @keyframes pop { 0% { transform: scale(1); } 36% { transform: scale(1.05); } 100% { transform: scale(1); } }
@@ -658,17 +659,17 @@
     <div class="tiles">
       <div class="glass tile">
         <span class="lab">Total</span>
-        <span class="tile-v" id="t-total">¥0</span>
+        <span class="tile-v" id="t-total">—</span>
         <span class="tile-sub" id="t-total-sub"></span>
       </div>
       <div class="glass tile">
         <span class="lab">Per day</span>
-        <span class="tile-v" id="t-avg">¥0</span>
+        <span class="tile-v" id="t-avg">—</span>
         <span class="tile-sub" id="t-avg-sub"></span>
       </div>
       <div class="glass tile">
         <span class="lab">Biggest</span>
-        <span class="tile-v" id="t-max">¥0</span>
+        <span class="tile-v" id="t-max">—</span>
         <span class="tile-sub" id="t-max-sub"></span>
       </div>
     </div>
@@ -694,7 +695,11 @@
     <div class="glass card pad">
       <div class="fields">
         <div class="fld">
-          <span class="lab">Money you have, in ¥ · optional</span>
+          <span class="lab">Currency you spend in</span>
+          <select id="i-cur"></select>
+        </div>
+        <div class="fld">
+          <span class="lab" id="lab-budget">Money you have · optional</span>
           <input type="number" id="i-budget" inputmode="decimal" placeholder="3000" min="0" step="1">
         </div>
         <div class="pair">
@@ -703,17 +708,13 @@
         </div>
         <div class="pair">
           <div class="fld">
-            <span class="lab">Home currency</span>
-            <select id="i-home">
-              <option value="UZS">UZS — so'm</option>
-              <option value="USD">USD — dollar</option>
-              <option value="RUB">RUB — ruble</option>
-              <option value="KZT">KZT — tenge</option>
-              <option value="EUR">EUR — euro</option>
-              <option value="NONE">Don't show</option>
-            </select>
+            <span class="lab">Money came from</span>
+            <select id="i-home"></select>
           </div>
-          <div class="fld"><span class="lab">1 ¥ equals</span><input type="number" id="i-rate" inputmode="decimal" placeholder="1700" min="0"></div>
+          <div class="fld">
+            <span class="lab" id="lab-rate">1 equals</span>
+            <input type="number" id="i-rate" inputmode="decimal" placeholder="1700" min="0">
+          </div>
         </div>
       </div>
     </div>
@@ -807,7 +808,25 @@
 
   var CATS = ["food", "coffee", "groceries", "transport", "phone", "study",
               "gym", "clothes", "fun", "health", "home", "other"];
-  var SYM = { UZS: "so'm", USD: "$", RUB: "₽", KZT: "₸", EUR: "€" };
+  // code, symbol, and whether the symbol follows the number. "so'm 50000"
+  // reads wrong to anyone who actually uses so'm; "50 000 so'm" is how it is
+  // written. Getting that right is most of what makes a currency feel native.
+  var CUR = [
+    ["CNY", "¥", 0], ["USD", "$", 0], ["EUR", "€", 0], ["GBP", "£", 0],
+    ["RUB", "₽", 1], ["UZS", "so'm", 1], ["KZT", "₸", 1], ["KGS", "сом", 1],
+    ["TJS", "somoni", 1], ["AZN", "₼", 1], ["GEL", "₾", 1], ["TRY", "₺", 0],
+    ["JPY", "¥", 0], ["KRW", "₩", 0], ["HKD", "HK$", 0], ["TWD", "NT$", 0],
+    ["SGD", "S$", 0], ["MYR", "RM", 0], ["THB", "฿", 0], ["VND", "₫", 1],
+    ["IDR", "Rp", 0], ["PHP", "₱", 0], ["INR", "₹", 0], ["PKR", "₨", 0],
+    ["AED", "AED", 0], ["UAH", "₴", 1], ["PLN", "zł", 1], ["MNT", "₮", 1]
+  ];
+
+  var CUR_BY = {};
+  CUR.forEach(function (c) { CUR_BY[c[0]] = { sym: c[1], post: !!c[2] }; });
+
+  function curOf(code) { return CUR_BY[code] || CUR_BY.CNY; }
+  function symbol() { return curOf(db.cur).sym; }
+  function symbolAfter() { return curOf(db.cur).post; }
   var KEY = "safetospend.v1";
   var DAY_MS = 86400000;
 
@@ -894,8 +913,8 @@
   // ───────── data ─────────
 
   function blank() {
-    return { budget: 0, start: today(), end: null, home: "UZS", rate: 0, items: [],
-             tombstones: [], cursor: null, deviceKey: null };
+    return { budget: 0, start: today(), end: null, cur: "CNY", home: "UZS", rate: 0,
+             items: [], tombstones: [], cursor: null, deviceKey: null };
   }
 
   function load() {
@@ -908,7 +927,8 @@
       base.budget = Number(p.budget) || 0;
       base.start = typeof p.start === "string" ? p.start : today();
       base.end = typeof p.end === "string" && p.end ? p.end : null;
-      base.home = SYM[p.home] || p.home === "NONE" ? p.home : "UZS";
+      base.cur = CUR_BY[p.cur] ? p.cur : "CNY";
+      base.home = (CUR_BY[p.home] || p.home === "NONE") ? p.home : "UZS";
       base.rate = Number(p.rate) || 0;
       base.cursor = typeof p.cursor === "string" ? p.cursor : null;
       base.deviceKey = typeof p.deviceKey === "string" ? p.deviceKey : null;
@@ -955,7 +975,10 @@
       ? r.toLocaleString("en-US", { maximumFractionDigits: 0 })
       : r.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  function money(n) { return "¥" + fmt(n); }
+  function money(n) {
+    var c = curOf(db.cur);
+    return c.post ? fmt(n) + " " + c.sym : c.sym + fmt(n);
+  }
 
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) {
@@ -1178,6 +1201,14 @@
 
   function renderHero(pop) {
     var s = stats();
+
+    // the symbol lives in its own span so it can sit either side of the number
+    var c = curOf(db.cur);
+    document.querySelectorAll(".figure .cur, .amt .cur").forEach(function (el) {
+      el.textContent = c.sym;
+    });
+    $("fig").classList.toggle("after", c.post);
+    $("amt").classList.toggle("after", c.post);
     var hasBudget = db.budget > 0 && !s.ended;
     var over = hasBudget && s.stillToday < -0.005;
 
@@ -1523,6 +1554,30 @@
 
   // ───────── budget fields ─────────
 
+  // both selects come from one table, so a currency added once appears in both
+  function fillCur(el, extra) {
+    el.innerHTML = (extra || "") + CUR.map(function (c) {
+      return '<option value="' + c[0] + '">' + c[0] + " · " + c[1] + "</option>";
+    }).join("");
+  }
+  fillCur($("i-cur"), "");
+  fillCur($("i-home"), '<option value="NONE">Don\'t show</option>');
+
+  function paintCurLabels() {
+    $("lab-budget").textContent = "Money you have, in " + symbol() + " · optional";
+    $("lab-rate").textContent = "1 " + symbol() + " equals";
+  }
+
+  $("i-cur").value = db.cur;
+  paintCurLabels();
+
+  $("i-cur").addEventListener("change", function (e) {
+    db.cur = CUR_BY[e.target.value] ? e.target.value : "CNY";
+    save();
+    paintCurLabels();
+    renderAll(true);
+  });
+
   $("i-budget").value = db.budget || "";
   $("i-start").value = db.start || today();
   $("i-end").value = db.end || "";
@@ -1799,7 +1854,7 @@
     var a = amountOf(), el = $("conv");
     if (!a || !db.rate || db.home === "NONE") { el.textContent = ""; return; }
     el.textContent = "≈ " + (a * db.rate).toLocaleString("en-US", { maximumFractionDigits: 0 }) +
-      " " + (SYM[db.home] || "");
+      " " + curOf(db.home).sym;
   }
 
   function paintDraft() {
