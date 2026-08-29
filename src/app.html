@@ -397,9 +397,29 @@
     padding: 12px 18px calc(20px + env(safe-area-inset-bottom, 0px));
     transform: translateY(103%);
     transition: transform 0.4s cubic-bezier(0.24, 1.1, 0.36, 1);
-    display: flex; flex-direction: column; gap: 13px;
+    display: flex; flex-direction: column;
+
+    /* Without a ceiling the sheet grows past the top of a phone screen and
+       takes the amount with it. dvh so a collapsing address bar does not
+       change the maths mid-interaction. */
+    max-height: 92vh;
+    max-height: 92dvh;
+    overflow: hidden;
   }
   .sheet.up { transform: translateY(0); }
+
+  .sheet-head { flex: none; display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px; }
+
+  .sheet-mid {
+    flex: 1 1 auto; min-height: 0;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;          /* do not scroll the page behind */
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 2px 0 12px;
+  }
+  .sheet-mid::-webkit-scrollbar { width: 0; }
+
+  .sheet-foot { flex: none; display: flex; flex-direction: column; gap: 10px; padding-top: 2px; }
 
   .grab { width: 40px; height: 5px; border-radius: 3px; background: var(--muted); opacity: 0.35; margin: 2px auto 0; }
 
@@ -539,6 +559,18 @@
   .install button.ghost { background: transparent; color: var(--muted); padding: 9px 6px; }
   .install button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
+  /* Short phones — an SE has roughly 570px of usable height once the browser
+     chrome is there. Buy the scrolling middle some room by trimming the parts
+     that can afford it, instead of letting it collapse to nothing. */
+  @media (max-height: 730px) {
+    .amt { font-size: 46px; padding-top: 4px; }
+    .sheet-head { gap: 8px; padding-bottom: 8px; }
+    .key { padding: 12px 0; font-size: 23px; }
+    .commit { padding: 14px; }
+    .cat { padding: 10px 4px; font-size: 12.5px; }
+    .keys { gap: 7px; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
   }
@@ -672,36 +704,46 @@
 <div class="scrim" id="scrim"></div>
 
 <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Add a spend" tabindex="-1">
-  <div class="grab"></div>
-  <div class="amt zero" id="amt"><span class="cur">¥</span><span id="amtv">0</span></div>
-  <p class="conv" id="conv"></p>
 
-  <div class="seg" id="whopaid">
-    <button type="button" data-paid="me" aria-pressed="true">I paid</button>
-    <button type="button" data-paid="them" aria-pressed="false">Someone else paid</button>
+  <!-- pinned: the number being typed must never leave the screen -->
+  <div class="sheet-head">
+    <div class="grab"></div>
+    <div class="amt zero" id="amt"><span class="cur">¥</span><span id="amtv">0</span></div>
+    <p class="conv" id="conv"></p>
   </div>
 
-  <div class="cats" id="cats"></div>
+  <!-- scrolls when the screen is short -->
+  <div class="sheet-mid">
+    <div class="seg" id="whopaid">
+      <button type="button" data-paid="me" aria-pressed="true">I paid</button>
+      <button type="button" data-paid="them" aria-pressed="false">Someone else paid</button>
+    </div>
 
-  <div class="splitbar">
-    <span class="lab">Split between</span>
-    <div class="stepper">
-      <button type="button" id="minus" aria-label="Fewer people">−</button>
-      <span class="n" id="ways">just me</span>
-      <button type="button" id="plus" aria-label="More people">+</button>
+    <div class="cats" id="cats"></div>
+
+    <div class="splitbar">
+      <span class="lab">Split between</span>
+      <div class="stepper">
+        <button type="button" id="minus" aria-label="Fewer people">−</button>
+        <span class="n" id="ways">just me</span>
+        <button type="button" id="plus" aria-label="More people">+</button>
+      </div>
+    </div>
+
+    <input class="noteinput" id="note" type="text" maxlength="60"
+           placeholder="What was it? (optional)" autocomplete="off" enterkeyhint="done">
+
+    <div class="whenrow">
+      <span class="lab">When</span>
+      <input type="date" id="when" aria-label="Date of this spend">
     </div>
   </div>
 
-  <input class="noteinput" id="note" type="text" maxlength="60"
-         placeholder="What was it? (optional)" autocomplete="off" enterkeyhint="done">
-
-  <div class="whenrow">
-    <span class="lab">When</span>
-    <input type="date" id="when" aria-label="Date of this spend">
+  <!-- pinned: keypad and Save stay under the thumb -->
+  <div class="sheet-foot">
+    <div class="keys" id="keys"></div>
+    <button class="commit" id="commit" disabled>Save</button>
   </div>
-
-  <div class="keys" id="keys"></div>
-  <button class="commit" id="commit" disabled>Save</button>
 </section>
 
 <div class="toast" id="toast" role="status" aria-live="polite">
@@ -1529,6 +1571,21 @@
   }
 
   $("note").addEventListener("input", function (e) { draft.note = e.target.value; });
+
+  // The phone keyboard covers the bottom of the sheet when the note is
+  // focused. Bring the field up inside its own scroller — scrollIntoView on
+  // the element would move the page behind the sheet instead.
+  $("note").addEventListener("focus", function () {
+    setTimeout(function () {
+      var mid = document.querySelector(".sheet-mid");
+      if (mid) mid.scrollTop = mid.scrollHeight;
+    }, 250);
+  });
+
+  // Enter on the phone keyboard should save, not just dismiss the keyboard.
+  $("note").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); e.target.blur(); commit(); }
+  });
   $("when").addEventListener("change", function (e) {
     draft.when = e.target.value || today();
     paintDraft();
@@ -1558,7 +1615,16 @@
   // hardware keyboard
   window.addEventListener("keydown", function (e) {
     if (!sheetOpen()) return;
+
+    // Escape always closes. Everything below drives the amount keypad, so it
+    // must not fire while the cursor is in the note or the date field —
+    // typing "2 coffees" would otherwise put a 2 into the amount.
     if (e.key === "Escape") { closeSheet(); return; }
+
+    var t = e.target;
+    var typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+    if (typing) return;
+
     if (e.key === "Enter") { e.preventDefault(); commit(); return; }
     if (e.key === "Backspace") { e.preventDefault(); press("←"); return; }
     if (/^[0-9.]$/.test(e.key)) { e.preventDefault(); press(e.key); }
