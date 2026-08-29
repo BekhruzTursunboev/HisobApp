@@ -122,6 +122,36 @@ try {
   ok("a device syncing from zero learns of the delete",
      fresh.json.entries.find((e) => e.id === e2)?.deleted === true);
 
+  console.log("\n── notes and backdating ──");
+  const e3 = crypto.randomUUID();
+  const backdated = new Date(Date.now() - 3 * 86400000).toISOString();
+  const withNote = await call("/api/sync", {
+    token: alice,
+    body: { changes: [{ id: e3, amount: 18, category: "coffee", ways: 1,
+                        paidByMe: true, spentAt: backdated, note: "latte near the library" }] }
+  });
+  ok("note accepted", withNote.status === 200, withNote.json);
+  const back = withNote.json.entries.find((e) => e.id === e3);
+  ok("note comes back intact", back?.note === "latte near the library", back?.note);
+  ok("backdated timestamp preserved",
+     Math.abs(Date.parse(back.spentAt) - Date.parse(backdated)) < 1000, back?.spentAt);
+
+  const cleared = await call("/api/sync", {
+    token: alice,
+    body: { changes: [{ id: e3, amount: 18, category: "coffee", ways: 1,
+                        paidByMe: true, spentAt: backdated }] }
+  });
+  ok("clearing a note stores null",
+     cleared.json.entries.find((e) => e.id === e3)?.note === null,
+     cleared.json.entries.find((e) => e.id === e3)?.note);
+
+  const longNote = await call("/api/sync", {
+    token: alice,
+    body: { changes: [{ id: crypto.randomUUID(), amount: 5, category: "food", ways: 1,
+                        paidByMe: true, spentAt, note: "x".repeat(81) }] }
+  });
+  ok("rejects an over-long note", longNote.status === 400, longNote.status);
+
   console.log("\n── shared bill ──");
   const mk = await call("/api/split", {
     token: alice, body: { total: 200, ways: 4, note: "dinner" }

@@ -39,6 +39,10 @@ create table if not exists entries (
   deleted_at  timestamptz
 );
 
+-- what it actually was. "food 45" means nothing three weeks later.
+alter table entries add column if not exists note text
+  check (note is null or char_length(note) <= 80);
+
 create index if not exists entries_user_spent_idx   on entries (user_id, spent_at desc);
 create index if not exists entries_user_updated_idx on entries (user_id, updated_at);
 

@@ -57,6 +57,9 @@ export default handler(async (req, res) => {
     if (Number.isNaN(spentAt.getTime())) {
       return fail(res, 400, "bad_date", `Bad date on entry ${c.id}.`);
     }
+    if (c.note != null && (typeof c.note !== "string" || c.note.length > 80)) {
+      return fail(res, 400, "bad_note", `Note too long on entry ${c.id}.`);
+    }
 
     clean.push({
       id: c.id,
@@ -65,6 +68,7 @@ export default handler(async (req, res) => {
       ways,
       paidByMe: c.paidByMe !== false,
       spentAt: spentAt.toISOString(),
+      note: c.note ? c.note.trim().slice(0, 80) || null : null,
       deleted: false
     });
   }
@@ -79,15 +83,16 @@ export default handler(async (req, res) => {
       `;
     } else {
       await sql`
-        insert into entries (id, user_id, amount, category, ways, paid_by_me, spent_at, updated_at)
+        insert into entries (id, user_id, amount, category, ways, paid_by_me, spent_at, note, updated_at)
              values (${c.id}, ${user.id}, ${c.amount}, ${c.category}, ${c.ways},
-                     ${c.paidByMe}, ${c.spentAt}, now())
+                     ${c.paidByMe}, ${c.spentAt}, ${c.note}, now())
         on conflict (id) do update
                 set amount     = excluded.amount,
                     category   = excluded.category,
                     ways       = excluded.ways,
                     paid_by_me = excluded.paid_by_me,
                     spent_at   = excluded.spent_at,
+                    note       = excluded.note,
                     updated_at = now(),
                     deleted_at = null
               where entries.user_id = ${user.id}
@@ -100,7 +105,7 @@ export default handler(async (req, res) => {
   const cursor = since && !Number.isNaN(since.getTime()) ? since.toISOString() : "1970-01-01T00:00:00Z";
 
   const rows = await sql`
-      select id, amount, category, ways, paid_by_me, spent_at, updated_at, deleted_at
+      select id, amount, category, ways, paid_by_me, spent_at, note, updated_at, deleted_at
         from entries
        where user_id = ${user.id}
          and updated_at > ${cursor}
@@ -117,6 +122,7 @@ export default handler(async (req, res) => {
       ways: r.ways,
       paidByMe: r.paid_by_me,
       spentAt: r.spent_at,
+      note: r.note,
       updatedAt: r.updated_at,
       deleted: r.deleted_at !== null
     }))

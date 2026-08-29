@@ -448,6 +448,24 @@
   .cat[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); font-weight: 600; }
   .cat:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
+  .whenrow { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
+  .whenrow input[type="date"] {
+    font-family: var(--ui); font-size: 13.5px; font-weight: 600;
+    color: var(--ink); background: var(--well);
+    border: 1px solid var(--line); border-radius: var(--rs);
+    padding: 9px 11px; width: auto; min-width: 132px;
+  }
+  .whenrow input:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+  .noteinput {
+    font-family: var(--ui); font-size: 15px; font-weight: 500;
+    color: var(--ink); background: var(--well);
+    border: 1px solid var(--line); border-radius: var(--r1);
+    padding: 12px 14px; width: 100%;
+  }
+  .noteinput::placeholder { color: var(--muted); font-weight: 400; }
+  .noteinput:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
   .splitbar { display: flex; align-items: center; gap: 10px; }
   .splitbar .lab { flex: 1; }
   .stepper { display: flex; align-items: center; gap: 2px; background: var(--well); border: 1px solid var(--line); border-radius: var(--r1); padding: 4px; }
@@ -688,6 +706,14 @@
     </div>
   </div>
 
+  <input class="noteinput" id="note" type="text" maxlength="60"
+         placeholder="What was it? (optional)" autocomplete="off" enterkeyhint="done">
+
+  <div class="whenrow">
+    <span class="lab">When</span>
+    <input type="date" id="when" aria-label="Date of this spend">
+  </div>
+
   <div class="keys" id="keys"></div>
   <button class="commit" id="commit" disabled>Save</button>
 </section>
@@ -777,6 +803,7 @@
           ways: Math.min(20, Math.max(1, parseInt(it.ways, 10) || 1)),
           paid: it.paid === "them" ? "them" : "me",
           ts: Number(it.ts) || Date.now(),
+          note: typeof it.note === "string" ? it.note.slice(0, 80) : "",
           updatedAt: Number(it.updatedAt) || Number(it.ts) || Date.now(),
           dirty: it.dirty === true
         };
@@ -786,7 +813,7 @@
   }
 
   var db = load();
-  var draft = { digits: "", cat: "food", ways: 1, paid: "me" };
+  var draft = { digits: "", cat: "food", ways: 1, paid: "me", note: "", when: null };
   var pendingUndo = null, undoTimer = null;
 
   function save() {
@@ -871,7 +898,8 @@
         if (!i.dirty) return;
         changes.push({
           id: i.id, amount: i.amount, category: i.cat, ways: i.ways,
-          paidByMe: i.paid !== "them", spentAt: new Date(i.ts).toISOString()
+          paidByMe: i.paid !== "them", note: i.note || null,
+          spentAt: new Date(i.ts).toISOString()
         });
       });
       db.tombstones.forEach(function (t) { changes.push({ id: t.id, deleted: true }); });
@@ -888,6 +916,7 @@
         var row = {
           id: e.id, amount: e.amount, cat: e.category, ways: e.ways,
           paid: e.paidByMe ? "me" : "them",
+          note: e.note || "",
           ts: new Date(e.spentAt).getTime(),
           updatedAt: new Date(e.updatedAt).getTime(),
           dirty: false
@@ -1091,7 +1120,9 @@
     if (split) bits.push("split " + it.ways + " ways");
     if (it.paid === "them") bits.push("they paid");
     if (showDate) bits.unshift(friendlyDay(dayStamp(it.ts)).toLowerCase());
-    return '<div class="row"><span><span class="row-name">' + esc(it.cat) + "</span>" +
+    var name = it.note ? it.note : it.cat;
+    if (it.note) bits.unshift(it.cat);
+    return '<div class="row"><span><span class="row-name">' + esc(name) + "</span>" +
       (bits.length ? '<span class="row-note">' + esc(bits.join(" · ")) + "</span>" : "") + "</span>" +
       '<span class="row-amt">' + money(myShare(it)) +
       (split ? '<span class="full">bill ' + money(it.amount) + "</span>" : "") + "</span>" +
@@ -1408,7 +1439,10 @@
   var sheet = $("sheet"), scrim = $("scrim"), catBox = $("cats"), lockY = 0;
 
   function openSheet() {
-    draft = { digits: "", cat: "food", ways: 1, paid: "me" };
+    draft = { digits: "", cat: "food", ways: 1, paid: "me", note: "", when: today() };
+    $("note").value = "";
+    $("when").value = draft.when;
+    $("when").max = today();
     Array.prototype.forEach.call(catBox.children, function (o) {
       o.setAttribute("aria-pressed", o.getAttribute("data-cat") === "food" ? "true" : "false");
     });
@@ -1500,10 +1534,19 @@
     $("ways").textContent = draft.ways === 1 ? "just me" : draft.ways + " people";
     var a = amountOf();
     $("commit").disabled = a <= 0;
-    $("commit").textContent = a > 0 && draft.ways > 1
-      ? "Save · your share " + money(a / draft.ways) : "Save";
+    var back = draft.when && draft.when !== today();
+    var label = "Save";
+    if (a > 0 && draft.ways > 1) label = "Save · your share " + money(a / draft.ways);
+    if (back) label += " · " + friendlyDay(draft.when).toLowerCase();
+    $("commit").textContent = label;
     showConv();
   }
+
+  $("note").addEventListener("input", function (e) { draft.note = e.target.value; });
+  $("when").addEventListener("change", function (e) {
+    draft.when = e.target.value || today();
+    paintDraft();
+  });
 
   $("minus").addEventListener("click", function () { draft.ways = Math.max(1, draft.ways - 1); paintDraft(); });
   $("plus").addEventListener("click", function () { draft.ways = Math.min(20, draft.ways + 1); paintDraft(); });
@@ -1511,9 +1554,16 @@
   function commit() {
     var a = amountOf();
     if (a <= 0) return;
+    // a backdated entry lands at midday, so it can never drift into the
+    // neighbouring day through a timezone offset
+    var when = draft.when && draft.when !== today()
+      ? new Date(draft.when + "T12:00:00").getTime()
+      : Date.now();
+
     db.items.push({
       id: uuid(), amount: a, cat: draft.cat, ways: draft.ways, paid: draft.paid,
-      ts: Date.now(), updatedAt: Date.now(), dirty: true
+      note: draft.note.trim().slice(0, 60), ts: when,
+      updatedAt: Date.now(), dirty: true
     });
     save(); closeSheet(); go("today"); renderAll(true); SYNC.soon();
   }
