@@ -188,7 +188,22 @@
   .figure.pop { animation: pop 0.44s cubic-bezier(0.3, 1.5, 0.5, 1); }
   @keyframes pop { 0% { transform: scale(1); } 36% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-  .today-sub { font-size: 15.5px; color: var(--ink-2); margin: 26px auto 0; max-width: 28ch; line-height: 1.5; }
+  /* the last seven days, as information rather than a gamified streak */
+  .week { display: flex; justify-content: center; align-items: center; gap: 9px; margin-top: 22px; }
+  .week i {
+    width: 7px; height: 7px; border-radius: 50%; display: block;
+    background: var(--well);
+    transition: background 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.5, 0.5, 1);
+  }
+  .week i.on { background: var(--ink); }
+  .week i.now { width: 9px; height: 9px; }
+  .week i.pop { transform: scale(1.5); }
+  .week-note {
+    font-family: var(--mono); font-size: 10.5px; color: var(--muted);
+    text-align: center; margin: 11px 0 0; min-height: 15px;
+  }
+
+  .today-sub { font-size: 15.5px; color: var(--ink-2); margin: 20px auto 0; max-width: 28ch; line-height: 1.5; }
   .today-sub b { color: var(--ink); font-weight: 600; }
 
   .rail { margin: 34px 0 0; display: flex; flex-direction: column; gap: 10px; }
@@ -422,6 +437,7 @@
     overflow: hidden;
   }
   .sheet.up { transform: translateY(0); }
+  .sheet.drag { transition: none; }          /* follow the finger, do not lag behind it */
 
   .sheet-head { flex: none; display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px; }
 
@@ -613,6 +629,9 @@
           <span class="dial-note" id="spenttoday"></span>
         </div>
       </div>
+      <div class="week" id="week" aria-hidden="true"></div>
+      <p class="week-note" id="weeknote"></p>
+
       <p class="today-sub" id="figsub">Set a budget to begin.</p>
       <div class="rail">
         <div class="rail-track"><div class="rail-fill" id="rail" style="width:0%"></div></div>
@@ -820,6 +839,50 @@
   ];
 
   var $ = function (id) { return document.getElementById(id); };
+
+  var calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Android fires the Taptic engine through the Vibration API. iOS never
+  // implemented it, and the checkbox-switch trick that worked until iOS 26.4
+  // was patched — so iPhones get motion instead of a hack that breaks.
+  function tap(ms) {
+    if (calm) return;
+    try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+  }
+
+  // Count to the new value instead of snapping. The movement is what tells
+  // you the thing you just did landed.
+  function rollTo(el, to) {
+    // No animation when motion is unwelcome, and none while the tab is
+    // hidden — requestAnimationFrame is paused there, so an animation started
+    // in the background would paint the OLD value and freeze on it.
+    if (calm || document.hidden) { el.textContent = fmt(to); el.dataset.v = to; return; }
+
+    var from = parseFloat(el.dataset.v || "0");
+    if (!isFinite(from)) from = 0;
+    el.dataset.v = to;
+    if (Math.abs(to - from) < 0.005) { el.textContent = fmt(to); return; }
+
+    if (el._roll) cancelAnimationFrame(el._roll);
+    clearTimeout(el._safety);
+
+    var t0 = performance.now(), ms = 620;
+
+    // If frames stop coming — backgrounded mid-roll, a throttled tab — land on
+    // the real number anyway. A stuck total is worse than a skipped animation.
+    el._safety = setTimeout(function () {
+      if (el._roll) cancelAnimationFrame(el._roll);
+      el.textContent = fmt(to);
+    }, ms + 140);
+
+    (function step(now) {
+      var k = Math.min(1, (now - t0) / ms);
+      var e = 1 - Math.pow(1 - k, 3);                    // ease out
+      el.textContent = fmt(from + (to - from) * e);
+      if (k < 1) el._roll = requestAnimationFrame(step);
+      else { el.textContent = fmt(to); clearTimeout(el._safety); }
+    })(t0);
+  }
 
   var ARC = 779.1; // 2·pi·r for the dial's r=124
 
@@ -1119,7 +1182,7 @@
     var over = hasBudget && s.stillToday < -0.005;
 
     // the number is always what you spent today
-    $("figv").textContent = fmt(s.todaySpent);
+    rollTo($("figv"), s.todaySpent);
     $("fig").classList.toggle("over", over);
     $("rail").classList.toggle("over", over);
 
@@ -1133,7 +1196,27 @@
     $("arc").classList.toggle("over", over);
 
     $("todaylab").textContent = "Spent today";
-    $("spenttoday").textContent = s.avg > 0 ? "avg " + money(s.avg) + " a day" : "";
+
+    // Yesterday is the comparison that means something. An average is a
+    // statistic; "less than yesterday" is a fact about you.
+    var yKey = dayStamp(Date.now() - DAY_MS);
+    var yTotal = 0, yAny = false;
+    db.items.forEach(function (it) {
+      if (dayStamp(it.ts) === yKey) { yTotal += myShare(it); yAny = true; }
+    });
+
+    if (yAny && s.todaySpent > 0) {
+      var d = s.todaySpent - yTotal;
+      $("spenttoday").textContent = Math.abs(d) < 0.005
+        ? "same as yesterday"
+        : money(Math.abs(d)) + (d < 0 ? " less" : " more") + " than yesterday";
+    } else if (s.avg > 0) {
+      $("spenttoday").textContent = "avg " + money(s.avg) + " a day";
+    } else {
+      $("spenttoday").textContent = "";
+    }
+
+    paintWeek();
 
     if (s.ended) {
       $("figsub").innerHTML = "That period is over — <b>" + money(s.spent) + "</b> spent of " +
@@ -1165,6 +1248,38 @@
     $("barnote").textContent = db.items.length
       ? db.items.length + (db.items.length === 1 ? " entry" : " entries") : "";
 
+  }
+
+  // Seven dots, one per day. A missed day leaves a visible gap — which is
+  // the nudge, without a flame icon or a scolding notification.
+  function paintWeek() {
+    var days = [];
+    for (var i = 6; i >= 0; i--) days.push(dayStamp(Date.now() - i * DAY_MS));
+
+    var hit = {};
+    db.items.forEach(function (it) { hit[dayStamp(it.ts)] = true; });
+
+    var box = $("week");
+    if (box.children.length !== 7) {
+      box.innerHTML = "<i></i><i></i><i></i><i></i><i></i><i></i><i></i>";
+    }
+    days.forEach(function (k, i) {
+      var dot = box.children[i];
+      dot.className = (hit[k] ? "on" : "") + (i === 6 ? " now" : "");
+    });
+
+    // count back from today for the run, but do not punish a day that is
+    // simply not over yet
+    var run = 0;
+    for (var j = 6; j >= 0; j--) {
+      if (hit[days[j]]) run++;
+      else if (j !== 6) break;
+    }
+    var logged = days.filter(function (k) { return hit[k]; }).length;
+
+    $("weeknote").textContent = !logged ? ""
+      : run >= 2 ? run + " days in a row"
+      : logged + " of the last 7 days";
   }
 
   function friendlyDay(stamp) {
@@ -1555,13 +1670,12 @@
   var sheet = $("sheet"), scrim = $("scrim"), catBox = $("cats"), lockY = 0;
 
   function openSheet() {
-    draft = { digits: "", cat: "food", ways: 1, paid: "me", note: "", when: today() };
+    var top = paintCats(null);                 // most-used first
+    draft = { digits: "", cat: top, ways: 1, paid: "me", note: "", when: today() };
+    paintCats(top);
     $("note").value = "";
     $("when").value = draft.when;
     $("when").max = today();
-    Array.prototype.forEach.call(catBox.children, function (o) {
-      o.setAttribute("aria-pressed", o.getAttribute("data-cat") === "food" ? "true" : "false");
-    });
     Array.prototype.forEach.call($("whopaid").children, function (o) {
       o.setAttribute("aria-pressed", o.getAttribute("data-paid") === "me" ? "true" : "false");
     });
@@ -1584,6 +1698,36 @@
 
   scrim.addEventListener("click", closeSheet);
 
+  // Dragging the top of the sheet downwards should dismiss it — on a phone
+  // that is the gesture people reach for before they look for a button.
+  (function () {
+    var head = sheet.querySelector(".sheet-head");
+    var startY = 0, dy = 0, dragging = false;
+
+    head.addEventListener("pointerdown", function (e) {
+      if (e.target.closest("button, input")) return;
+      dragging = true; startY = e.clientY; dy = 0;
+      sheet.classList.add("drag");
+      head.setPointerCapture(e.pointerId);
+    });
+
+    head.addEventListener("pointermove", function (e) {
+      if (!dragging) return;
+      dy = Math.max(0, e.clientY - startY);        // downwards only
+      sheet.style.transform = "translateY(" + dy + "px)";
+    });
+
+    function end() {
+      if (!dragging) return;
+      dragging = false;
+      sheet.classList.remove("drag");
+      sheet.style.transform = "";
+      if (dy > 110) { tap(10); closeSheet(); }
+    }
+    head.addEventListener("pointerup", end);
+    head.addEventListener("pointercancel", end);
+  })();
+
   $("whopaid").addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest("button[data-paid]") : null;
     if (!b) return;
@@ -1594,13 +1738,27 @@
     paintDraft();
   });
 
-  CATS.forEach(function (c) {
-    var b = document.createElement("button");
-    b.className = "cat"; b.type = "button"; b.textContent = c;
-    b.setAttribute("data-cat", c);
-    b.setAttribute("aria-pressed", c === "food" ? "true" : "false");
-    catBox.appendChild(b);
-  });
+  // Your own categories rise to the top. After a few entries the ones you
+  // actually use are under your thumb, which is a tap saved every time.
+  function paintCats(active) {
+    var used = {};
+    db.items.forEach(function (it) { used[it.cat] = (used[it.cat] || 0) + 1; });
+
+    var order = CATS.slice().sort(function (a, b) {
+      var d = (used[b] || 0) - (used[a] || 0);
+      return d !== 0 ? d : CATS.indexOf(a) - CATS.indexOf(b);   // stable otherwise
+    });
+
+    catBox.innerHTML = "";
+    order.forEach(function (c) {
+      var b = document.createElement("button");
+      b.className = "cat"; b.type = "button"; b.textContent = c;
+      b.setAttribute("data-cat", c);
+      b.setAttribute("aria-pressed", c === active ? "true" : "false");
+      catBox.appendChild(b);
+    });
+    return order[0];
+  }
 
   catBox.addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest(".cat") : null;
@@ -1620,7 +1778,7 @@
   });
   keyBox.addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest(".key") : null;
-    if (b) press(b.getAttribute("data-k"));
+    if (b) { tap(8); press(b.getAttribute("data-k")); }
   });
 
   function press(k) {
@@ -1696,7 +1854,19 @@
       note: draft.note.trim().slice(0, 60), ts: when,
       updatedAt: Date.now(), dirty: true
     });
-    save(); closeSheet(); go("today"); renderAll(true); SYNC.soon();
+    save();
+    tap(18);
+    closeSheet();
+    go("today");
+    renderAll(true);
+
+    // the dot for today lands a beat after the sheet is out of the way
+    setTimeout(function () {
+      var dot = $("week").children[6];
+      if (!dot || calm) return;
+      dot.classList.add("pop");
+      setTimeout(function () { dot.classList.remove("pop"); }, 380);
+    }, 260); SYNC.soon();
   }
   $("commit").addEventListener("click", commit);
 
