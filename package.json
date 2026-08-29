@@ -11,7 +11,8 @@
     "db:push": "node scripts/migrate.js",
     "db:check": "node scripts/check.js",
     "test:api": "node scripts/e2e.js",
-    "fonts": "node scripts/fonts.js"
+    "fonts": "node scripts/fonts.js",
+    "test:netlify": "node scripts/adapter-test.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2"

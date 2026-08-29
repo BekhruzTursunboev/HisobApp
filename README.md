@@ -79,13 +79,37 @@ npm run test:api
 
 ## Deploying
 
+**Deploy to Netlify, not Vercel, if anyone will use this from China.**
+
+GreatFire's tests on 28 August 2026: `*.vercel.app` had **127 of 131 URLs blocked** —
+the Great Firewall blocks that wildcard at the SNI level, so every site on it dies.
+`netlify.app` had **3 of 89 blocked**, and those three are individual sites blocked for
+their content, not the platform. Cloudflare Pages (`pages.dev`) is a reasonable second at
+9 of 114.
+
+```bash
+npx netlify deploy --prod
+```
+
+Then set `DATABASE_URL` under Site configuration → Environment variables.
+
+The API runs on both platforms from one implementation. `api/*.js` holds the logic in
+Vercel's `(req, res)` form; `netlify/functions/*.mjs` are three-line entry points that
+wrap the same handlers in `netlify/lib/adapter.js`, which translates between Web
+`Request`/`Response` and the Node signature. Nothing is duplicated, so the same tests
+cover both.
+
+Verify the entry points before you deploy:
+
+```bash
+npm run test:netlify
+```
+
+Vercel still works unchanged if you want it:
+
 ```bash
 npx vercel deploy
 ```
-
-Then add `DATABASE_URL` in the Vercel dashboard under Settings → Environment Variables.
-Vercel serves `public/` as static files and turns each file in `api/` into its own
-serverless function — no framework, no build step.
 
 ---
 
