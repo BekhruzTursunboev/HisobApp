@@ -22,8 +22,7 @@ writeFileSync(join(root, "hisob.html"), src);
 
 // ── hosted build ──
 const title = (src.match(/<title>([^<]*)<\/title>/) || [, "Hisob"])[1];
-const body = src.replace(/^<title>[^<]*<\/title>\n/, "").replace(/^<link rel="stylesheet"[^>]*>\n/m, "");
-const fontLink = (src.match(/<link rel="stylesheet"[^>]*fonts\.googleapis[^>]*>/) || [""])[0];
+const body = src.replace(/^<title>[^<]*<\/title>\n/, "");
 
 const HEAD = `<!doctype html>
 <html lang="en">
@@ -46,9 +45,6 @@ const HEAD = `<!doctype html>
 <meta name="apple-mobile-web-app-title" content="${title}">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-${fontLink}
 </head>
 <body>
 `;

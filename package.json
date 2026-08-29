@@ -10,7 +10,8 @@
     "dev": "node scripts/build.js && node scripts/serve.js",
     "db:push": "node scripts/migrate.js",
     "db:check": "node scripts/check.js",
-    "test:api": "node scripts/e2e.js"
+    "test:api": "node scripts/e2e.js",
+    "fonts": "node scripts/fonts.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2"
