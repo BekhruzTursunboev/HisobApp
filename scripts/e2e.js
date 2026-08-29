@@ -85,8 +85,25 @@ try {
   ok("still exactly 2 rows", count === 2, count);
 
   console.log("\n── cursor ──");
-  const after = await call("/api/sync", { token: alice, body: { since: push.json.serverTime } });
-  ok("nothing new after the cursor", after.json.entries?.length === 0, after.json.entries?.length);
+  // Use the cursor from the most recent sync, not the stale one from before
+  // the re-push — that entry genuinely changed and should come back.
+  const after = await call("/api/sync", { token: alice, body: { since: again.json.serverTime } });
+  ok("nothing new after the latest cursor", after.json.entries?.length === 0, after.json.entries?.length);
+  ok("an empty pull keeps the cursor", after.json.serverTime === again.json.serverTime,
+     { got: after.json.serverTime, sent: again.json.serverTime });
+
+  const stale = await call("/api/sync", { token: alice, body: { since: push.json.serverTime } });
+  ok("a stale cursor re-sends what changed since", stale.json.entries?.length >= 1,
+     stale.json.entries?.length);
+
+  ok("the cursor is not a fresh clock reading",
+     !/^20\d\d-\d\d-\d\dT/.test(again.json.serverTime) ||
+       Date.parse(again.json.serverTime) <= Date.parse(again.json.entries.at(-1).updatedAt) + 1,
+     again.json.serverTime);
+
+  const replayed = await call("/api/sync", { token: alice, body: { since: stale.json.serverTime } });
+  ok("advancing to the returned cursor then drains", replayed.json.entries?.length === 0,
+     replayed.json.entries?.length);
 
   console.log("\n── isolation ──");
   const bobPull = await call("/api/sync", { token: bob, body: {} });

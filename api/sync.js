@@ -101,11 +101,28 @@ export default handler(async (req, res) => {
   }
 
   // ── pull ──
-  const since = body.since ? new Date(body.since) : null;
-  const cursor = since && !Number.isNaN(since.getTime()) ? since.toISOString() : "1970-01-01T00:00:00Z";
+  // Pass the cursor straight through to Postgres. Parsing it with `new Date()`
+  // would round it to milliseconds and undo the precision the watermark below
+  // works to preserve — the row it points at would then match `>` again and be
+  // resent on every single sync, forever.
+  //
+  // Both shapes are accepted: what Postgres emits (2026-08-29 10:04:29.559123+00)
+  // and what a client might send (2026-08-29T10:04:29.559Z). Anything else
+  // starts from the beginning of time rather than erroring, so a corrupted
+  // cursor costs one full resync instead of breaking sync entirely.
+  const CURSOR =
+    /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:?(\d{2})?)?$/;
+  const raw = typeof body.since === "string" ? body.since.trim() : "";
+  const cursor = CURSOR.test(raw) ? raw : "1970-01-01T00:00:00Z";
 
   const rows = await sql`
-      select id, amount, category, ways, paid_by_me, spent_at, note, updated_at, deleted_at
+      select id, amount, category, ways, paid_by_me, spent_at, note,
+             updated_at,
+             -- as text, so the microseconds survive. The driver hands back a
+             -- JS Date, which only has milliseconds, and a cursor truncated
+             -- to ms sits behind the row it came from and matches it again.
+             updated_at::text as cursor_at,
+             deleted_at
         from entries
        where user_id = ${user.id}
          and updated_at > ${cursor}
@@ -113,8 +130,23 @@ export default handler(async (req, res) => {
        limit 2000
   `;
 
+  // The cursor is a watermark over the data, never a clock reading.
+  //
+  // Taking it from `new Date()` was wrong twice over. The function host and
+  // the database disagree by up to a second, and Node only has millisecond
+  // precision against Postgres's microseconds — so the cursor could land
+  // ahead of a row that was already written, and that row would never be
+  // sent again. Worse, rows are capped at 2000 per pull: a clock cursor
+  // jumps past everything beyond the cap, losing it permanently.
+  //
+  // Rows come back ordered by updated_at ascending, so the last one is
+  // exactly how far this client has now seen. With nothing new, the client's
+  // own cursor still stands.
+  const watermark = rows.length ? rows[rows.length - 1].cursor_at : cursor;
+
   send(res, 200, {
-    serverTime: new Date().toISOString(),
+    serverTime: watermark,
+    more: rows.length === 2000,   // hit the cap: sync again to get the rest
     entries: rows.map((r) => ({
       id: r.id,
       amount: Number(r.amount),
