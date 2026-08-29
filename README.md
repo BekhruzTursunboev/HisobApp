@@ -173,6 +173,25 @@ bound parameters and cannot be injected.
 
 ---
 
+## The operator page
+
+`/admin.html` — how many people signed up, how many came back, what they use.
+Guarded by `ADMIN_TOKEN`, a 32-byte random value compared in constant time. Generate one:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
+```
+
+Set it alongside `DATABASE_URL` in Netlify. Without it the endpoint returns 503 rather
+than falling open.
+
+**It shows activity, never content.** Entry counts, active days, last seen, whether
+someone uses splits or notes — but no amounts, no notes, no categories attributable to a
+person, and users appear as an 8-character ref rather than a full id. Four tests assert
+that contract on the real payload, because "the founder can read my spending" is how a
+campus app dies by word of mouth, and because retention is the only number that decides
+anything at this stage anyway.
+
 ## What is deliberately missing
 
 - **Rate limiting.** Anyone can call `/api/register` in a loop and fill the users table.

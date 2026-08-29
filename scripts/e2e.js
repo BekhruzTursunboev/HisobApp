@@ -228,6 +228,33 @@ try {
     token: bob, body: { status: "whatever" }
   });
   ok("rejects an invalid claim status", badStatus.status === 400, badStatus.status);
+  console.log("\n── admin ──");
+  const noTok = await fetch(`${BASE}/api/admin`).then((r) => r.status);
+  ok("admin refuses an unauthenticated request", noTok === 401 || noTok === 503, noTok);
+
+  const wrongTok = await fetch(`${BASE}/api/admin`, {
+    headers: { Authorization: "Bearer " + "x".repeat(43) }
+  }).then((r) => r.status);
+  ok("admin refuses a wrong token", wrongTok === 401 || wrongTok === 503, wrongTok);
+
+  if (process.env.ADMIN_TOKEN) {
+    const r = await fetch(`${BASE}/api/admin`, {
+      headers: { Authorization: "Bearer " + process.env.ADMIN_TOKEN }
+    });
+    const admin = await r.json();
+    ok("admin returns stats with the right token", r.status === 200, r.status);
+    ok("has totals", typeof admin.totals?.users === "number", admin.totals);
+    ok("has 30 days of series", admin.daily?.length === 30, admin.daily?.length);
+    ok("has retention", "rate_1d" in (admin.retention || {}), admin.retention);
+
+    // the privacy contract: activity, never content
+    const leaked = JSON.stringify(admin.people || []);
+    ok("no amounts in the people list", !/"amount"/.test(leaked));
+    ok("no notes in the people list", !/"note"/.test(leaked));
+    ok("no categories in the people list", !/"category"|"cat"/.test(leaked));
+    ok("people are referenced by a short ref, not a full id",
+       (admin.people || []).every((p) => !p.ref || p.ref.length <= 8), admin.people?.[0]?.ref);
+  }
 } finally {
   console.log("\n── cleanup ──");
   const gone = mine.length

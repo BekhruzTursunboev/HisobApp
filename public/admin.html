@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Hisob · operator</title>
+<style>
+  :root {
+    --ground: #EFEFF1;
+    --card:   #FFFFFF;
+    --ink:    #09090B;
+    --ink-2:  #56565E;
+    --muted:  #8E8E97;
+    --line:   rgba(9, 9, 11, 0.09);
+    --well:   rgba(9, 9, 11, 0.05);
+    --good:   #0E7C57;
+    --warn:   #9A6408;
+    --bad:    #C0342A;
+    --ui: -apple-system, "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0A0A0C;
+      --card:   #141418;
+      --ink:    #F4F4F6;
+      --ink-2:  #A6A6AF;
+      --muted:  #74747E;
+      --line:   rgba(255, 255, 255, 0.10);
+      --well:   rgba(255, 255, 255, 0.06);
+      --good:   #3FD29B;
+      --warn:   #E0A93F;
+      --bad:    #FF6257;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--ui); font-size: 15px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased; padding: 26px 18px 60px;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+  .stamp { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+  .lab {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+  }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .tile { display: flex; flex-direction: column; gap: 8px; }
+  .tile .v {
+    font-size: 30px; font-weight: 700; letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .tile .sub { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+  .v.good { color: var(--good); } .v.warn { color: var(--warn); } .v.bad { color: var(--bad); }
+
+  .plot { display: flex; align-items: flex-end; gap: 2px; height: 96px; margin-top: 14px; border-bottom: 1px solid var(--line); }
+  .plot span { flex: 1; background: var(--ink); opacity: 0.8; border-radius: 3px 3px 0 0; min-height: 2px; }
+  .plot span.zero { background: var(--muted); opacity: 0.22; }
+  .axis { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 9.5px; color: var(--muted); padding-top: 7px; }
+
+  .rows { display: flex; flex-direction: column; gap: 9px; margin-top: 14px; }
+  .row { display: grid; grid-template-columns: 122px 1fr 66px; align-items: center; gap: 12px; }
+  .row .n { font-size: 13px; color: var(--ink-2); }
+  .track { height: 8px; background: var(--well); border-radius: 2px; overflow: hidden; }
+  .fill { height: 100%; background: var(--ink); opacity: 0.8; border-radius: 0 3px 3px 0; }
+  .row .p { font-family: var(--mono); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 9px 10px 9px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  th { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  td.num, th.num { text-align: right; padding-right: 0; }
+  td.ref { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+  .tag { font-family: var(--mono); font-size: 9.5px; padding: 2px 6px; border-radius: 5px; background: var(--well); color: var(--ink-2); margin-right: 4px; }
+  .scroll { overflow-x: auto; }
+
+  button {
+    font-family: var(--ui); font-size: 13.5px; font-weight: 600;
+    background: var(--ink); color: var(--ground);
+    border: none; border-radius: 9px; padding: 10px 16px; cursor: pointer;
+  }
+  button.ghost { background: transparent; color: var(--ink-2); border: 1px solid var(--line); }
+  input {
+    font-family: var(--mono); font-size: 14px; color: var(--ink);
+    background: var(--well); border: 1px solid var(--line);
+    border-radius: 9px; padding: 11px 12px; width: 100%;
+  }
+  .gate { max-width: 420px; margin: 60px auto; display: flex; flex-direction: column; gap: 12px; }
+  .err { color: var(--bad); font-family: var(--mono); font-size: 12px; }
+  .note { font-family: var(--mono); font-size: 11px; color: var(--muted); line-height: 1.6; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="gate card" id="gate">
+    <h1>Hisob · operator</h1>
+    <p class="note">Paste the admin token. Kept in this tab only, never stored on disk.</p>
+    <input id="token" type="password" placeholder="ADMIN_TOKEN" autocomplete="off">
+    <button id="go">Open</button>
+    <p class="err" id="err" hidden></p>
+  </div>
+
+  <div id="app" hidden>
+    <header>
+      <h1>Hisob · operator</h1>
+      <span class="stamp" id="stamp"></span>
+    </header>
+
+    <div class="tiles" id="tiles"></div>
+
+    <div class="card">
+      <span class="lab">Do they come back</span>
+      <div class="tiles" id="retention" style="margin-top:14px"></div>
+      <p class="note" style="margin:14px 0 0">
+        Retained means seen at least a day after signing up. Everything else is vanity —
+        this is the number that says whether the app is worth continuing.
+      </p>
+    </div>
+
+    <div class="card">
+      <span class="lab">Signups · last 30 days</span>
+      <div class="plot" id="p-signups"></div>
+      <div class="axis"><span id="a1"></span><span>today</span></div>
+    </div>
+
+    <div class="card">
+      <span class="lab">Entries logged · last 30 days</span>
+      <div class="plot" id="p-entries"></div>
+      <div class="axis"><span id="a2"></span><span>today</span></div>
+    </div>
+
+    <div class="card">
+      <span class="lab">Feature adoption</span>
+      <div class="rows" id="features"></div>
+    </div>
+
+    <div class="card">
+      <span class="lab">People · activity only, never their spending</span>
+      <div class="scroll">
+        <table id="people"></table>
+      </div>
+      <p class="note" style="margin:14px 0 0">
+        Amounts, notes and categories are deliberately not shown. Nobody should be able to
+        read a user's finances from an operator page, including you.
+      </p>
+    </div>
+
+    <div style="display:flex;gap:9px">
+      <button id="refresh">Refresh</button>
+      <button class="ghost" id="out">Forget token</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var KEY = "hisob.admin.token";
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  function ago(iso) {
+    if (!iso) return "never";
+    var m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (m < 1) return "just now";
+    if (m < 60) return m + "m ago";
+    var h = Math.floor(m / 60);
+    if (h < 24) return h + "h ago";
+    var d = Math.floor(h / 24);
+    return d + "d ago";
+  }
+
+  function pct(n) { return n == null ? "—" : Math.round(n * 100) + "%"; }
+
+  function tile(label, value, sub, tone) {
+    return '<div class="tile"><span class="lab">' + esc(label) + "</span>" +
+      '<span class="v' + (tone ? " " + tone : "") + '">' + esc(value) + "</span>" +
+      (sub ? '<span class="sub">' + esc(sub) + "</span>" : "") + "</div>";
+  }
+
+  function plot(el, series, key) {
+    var max = series.reduce(function (a, d) { return Math.max(a, d[key]); }, 0);
+    el.innerHTML = series.map(function (d) {
+      var h = max > 0 && d[key] > 0 ? Math.max(4, (d[key] / max) * 100) : 2;
+      return '<span class="' + (d[key] ? "" : "zero") + '" style="height:' + h + '%" ' +
+             'title="' + esc(d.day) + ": " + d[key] + '"></span>';
+    }).join("");
+  }
+
+  function render(data) {
+    $("stamp").textContent = "generated " + ago(data.generatedAt);
+
+    var t = data.totals;
+    $("tiles").innerHTML =
+      tile("Users", t.users, "+" + t.users_7d + " this week") +
+      tile("Active this week", t.active_7d,
+           t.users ? Math.round((t.active_7d / t.users) * 100) + "% of all users" : "",
+           t.active_7d === 0 ? "bad" : "") +
+      tile("Active today", t.active_1d, "") +
+      tile("Entries", t.entries, "+" + t.entries_7d + " this week") +
+      tile("Shared bills", t.splits, t.claims + " claimed");
+
+    var r = data.retention;
+    var tone = function (v) { return v == null ? "" : v >= 0.4 ? "good" : v >= 0.2 ? "warn" : "bad"; };
+    $("retention").innerHTML =
+      tile("Came back after a day", pct(r.rate_1d),
+           r.kept_1d + " of " + r.cohort_1d + " old enough to count", tone(r.rate_1d)) +
+      tile("Still there after a week", pct(r.rate_7d),
+           r.kept_7d + " of " + r.cohort_7d + " old enough to count", tone(r.rate_7d));
+
+    plot($("p-signups"), data.daily, "signups");
+    plot($("p-entries"), data.daily, "entries");
+    $("a1").textContent = data.daily.length ? data.daily[0].day : "";
+    $("a2").textContent = data.daily.length ? data.daily[0].day : "";
+
+    var f = data.features, base = t.users || 1;
+    var feats = [
+      ["Logged anything", f.with_entries],
+      ["Split a bill", f.split_bills],
+      ["Owed someone", f.owed_someone],
+      ["Wrote notes", f.write_notes]
+    ];
+    $("features").innerHTML = feats.map(function (row) {
+      var share = row[1] / base;
+      return '<div class="row"><span class="n">' + esc(row[0]) + "</span>" +
+        '<span class="track"><span class="fill" style="width:' +
+          Math.max(2, Math.round(share * 100)) + '%"></span></span>' +
+        '<span class="p">' + row[1] + " · " + Math.round(share * 100) + "%</span></div>";
+    }).join("");
+
+    $("people").innerHTML =
+      "<thead><tr><th>Ref</th><th>Name</th><th class=num>Entries</th>" +
+      "<th class=num>Active days</th><th>Joined</th><th>Last seen</th><th>Uses</th></tr></thead><tbody>" +
+      data.people.map(function (p) {
+        var tags = (p.usesSplits ? '<span class="tag">splits</span>' : "") +
+                   (p.usesNotes ? '<span class="tag">notes</span>' : "");
+        return "<tr><td class=ref>" + esc(p.ref) + "</td><td>" + esc(p.name || "—") + "</td>" +
+          "<td class=num>" + p.entries + "</td><td class=num>" + p.activeDays + "</td>" +
+          "<td>" + esc(ago(p.createdAt)) + "</td><td>" + esc(ago(p.lastSeenAt)) + "</td>" +
+          "<td>" + (tags || "—") + "</td></tr>";
+      }).join("") + "</tbody>";
+  }
+
+  function load(token) {
+    return fetch("/api/admin", { headers: { Authorization: "Bearer " + token } })
+      .then(function (r) {
+        if (r.status === 401) throw new Error("Wrong token.");
+        if (r.status === 503) throw new Error("ADMIN_TOKEN is not set on the server.");
+        if (!r.ok) throw new Error("Server returned " + r.status + ".");
+        return r.json();
+      });
+  }
+
+  function open(token) {
+    return load(token).then(function (data) {
+      try { sessionStorage.setItem(KEY, token); } catch (e) {}
+      $("gate").hidden = true;
+      $("app").hidden = false;
+      render(data);
+    });
+  }
+
+  $("go").addEventListener("click", function () {
+    var token = $("token").value.trim();
+    if (!token) return;
+    $("err").hidden = true;
+    open(token).catch(function (e) { $("err").textContent = e.message; $("err").hidden = false; });
+  });
+
+  $("token").addEventListener("keydown", function (e) { if (e.key === "Enter") $("go").click(); });
+
+  $("refresh").addEventListener("click", function () {
+    var token = sessionStorage.getItem(KEY);
+    if (token) load(token).then(render);
+  });
+
+  $("out").addEventListener("click", function () {
+    try { sessionStorage.removeItem(KEY); } catch (e) {}
+    location.reload();
+  });
+
+  var saved = null;
+  try { saved = sessionStorage.getItem(KEY); } catch (e) {}
+  if (saved) open(saved).catch(function () { /* stale token: show the gate */ });
+})();
+</script>
+</body>
+</html>
