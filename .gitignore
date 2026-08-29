@@ -1,0 +1,20 @@
+# ── secrets — never commit these ──
+.env
+.env.*
+!.env.example
+
+# dependencies
+node_modules/
+
+# vercel
+.vercel/
+
+# os / editor
+.DS_Store
+Thumbs.db
+*.log
+
+# personal notes — kept locally, not published
+IDEAS.md
+IDEAS-2.md
+friction-log.html
