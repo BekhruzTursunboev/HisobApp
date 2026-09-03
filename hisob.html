@@ -149,9 +149,59 @@
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     border-bottom: 1px solid var(--line);
   }
-  .bar-in { width: 100%; max-width: 440px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .bar-in { width: 100%; max-width: 440px; display: flex; align-items: center; gap: 10px; }
+  .bar-in .bar-title { flex: 1; }
   .bar-title { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
   .bar-note { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+
+  /* The language control has to be findable by someone who cannot read the
+     app. A labelled setting inside a tab with no label is invisible to exactly
+     the person who needs it, so it lives in the header, always on screen. */
+  .langchip {
+    position: relative;
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.06em;
+    background: var(--well); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 5px 11px; cursor: pointer; flex: none;
+    display: flex; align-items: center; gap: 5px;
+    transition: transform 0.14s cubic-bezier(0.34,1.5,0.5,1), border-color 0.15s ease;
+  }
+  /* The pill reads better small, but a 26px tap target does not. The
+     pseudo-element extends the hit area to 44px without changing the look. */
+  .langchip::before { content: ""; position: absolute; inset: -9px -7px; }
+  .langchip:active { transform: scale(0.93); }
+  .langchip:hover { border-color: var(--muted); }
+  .langchip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .langchip svg { width: 13px; height: 13px; opacity: 0.7; }
+
+  .picker {
+    position: fixed; z-index: 56; left: 50%; top: 50%;
+    transform: translate(-50%, -46%) scale(0.97);
+    width: calc(100% - 48px); max-width: 300px;
+    background: var(--glass-deep);
+    backdrop-filter: blur(36px) saturate(190%);
+    -webkit-backdrop-filter: blur(36px) saturate(190%);
+    border: 1px solid var(--glass-edge);
+    border-radius: var(--r3);
+    box-shadow: var(--drop-lift), inset 0 1.5px 1px var(--in-hi);
+    padding: 10px;
+    display: flex; flex-direction: column; gap: 4px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .picker.up { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+
+  .picker button {
+    font-family: var(--ui); font-size: 16px; font-weight: 500;
+    text-align: left; background: none; border: none; cursor: pointer;
+    color: var(--ink); border-radius: var(--r1); padding: 14px 15px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .picker button:hover { background: var(--well); }
+  .picker button[aria-current="true"] { background: var(--well); font-weight: 700; }
+  .picker button:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+  .picker button span { font-family: var(--mono); font-size: 11px; color: var(--muted); }
 
   /* ═══════ screens ═══════ */
 
@@ -612,6 +662,12 @@
   <div class="bar-in">
     <span class="bar-title" id="bartitle">Today</span>
     <span class="bar-note" id="barnote"></span>
+    <button class="langchip" id="langchip" type="button" aria-haspopup="menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/>
+        <path d="M3 12h18M12 3c2.6 2.7 2.6 15 0 18M12 3c-2.6 2.7-2.6 15 0 18"/></svg>
+      <span id="langcode">EN</span>
+    </button>
   </div>
 </header>
 
@@ -796,6 +852,8 @@
     <button class="commit" id="commit" disabled data-t="save">Save</button>
   </div>
 </section>
+
+<section class="picker" id="picker" role="menu" aria-label="Language"></section>
 
 <div class="toast" id="toast" role="status" aria-live="polite">
   <span id="toasttext">Deleted</span>
@@ -1866,14 +1924,49 @@
   }).join("");
   $("i-lang").value = db.lang;
 
-  $("i-lang").addEventListener("change", function (e) {
-    db.lang = I18N[e.target.value] ? e.target.value : "en";
+  $("i-lang").addEventListener("change", function (e) { setLang(e.target.value); });
+
+  // Each language is written in its own script, so you can find yours without
+  // being able to read any of the others.
+  var CODE = { en: "EN", ru: "РУ", uz: "UZ", zh: "中" };
+
+  function paintPicker() {
+    $("langcode").textContent = CODE[db.lang] || "EN";
+    $("picker").innerHTML = LANGS.map(function (l) {
+      return '<button type="button" role="menuitem" data-lang="' + l[0] + '"' +
+        (l[0] === db.lang ? ' aria-current="true"' : "") + ">" +
+        l[1] + "<span>" + (CODE[l[0]] || "") + "</span></button>";
+    }).join("");
+  }
+
+  function setLang(code) {
+    db.lang = I18N[code] ? code : "en";
     save();
     paintStatic();
+    paintPicker();
     paintCurLabels();
     buildTabs();
-    go(current);          // the header title is set by go(), not by paintStatic
+    go(current);
+    $("i-lang").value = db.lang;
     renderAll(false);
+  }
+
+  function openPicker() {
+    paintPicker();
+    $("picker").classList.add("up");
+    $("scrim").classList.add("up");
+  }
+  function closePicker() {
+    $("picker").classList.remove("up");
+    if (!sheetOpen()) $("scrim").classList.remove("up");
+  }
+
+  $("langchip").addEventListener("click", openPicker);
+  $("picker").addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("button[data-lang]") : null;
+    if (!b) return;
+    setLang(b.getAttribute("data-lang"));
+    closePicker();
   });
 
   fillCur($("i-cur"), "");
@@ -2064,7 +2157,7 @@
 
   function sheetOpen() { return sheet.classList.contains("up"); }
 
-  scrim.addEventListener("click", closeSheet);
+  scrim.addEventListener("click", function () { closePicker(); closeSheet(); });
 
   // Dragging the top of the sheet downwards should dismiss it — on a phone
   // that is the gesture people reach for before they look for a button.
@@ -2240,12 +2333,13 @@
 
   // hardware keyboard
   window.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && $("picker").classList.contains("up")) { closePicker(); return; }
     if (!sheetOpen()) return;
 
     // Escape always closes. Everything below drives the amount keypad, so it
     // must not fire while the cursor is in the note or the date field —
     // typing "2 coffees" would otherwise put a 2 into the amount.
-    if (e.key === "Escape") { closeSheet(); return; }
+    if (e.key === "Escape") { closePicker(); closeSheet(); return; }
 
     var t = e.target;
     var typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
@@ -2268,6 +2362,7 @@
   });
 
   paintStatic();
+  paintPicker();
   renderAll(false);
   SYNC.start();
   document.addEventListener("visibilitychange", function () { if (!document.hidden) SYNC.soon(); });
