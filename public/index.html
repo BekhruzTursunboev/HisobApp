@@ -647,7 +647,7 @@
           <circle class="dial-arc" id="arc" cx="130" cy="130" r="124"/>
         </svg>
         <div class="dial-in">
-          <span class="lab" id="todaylab">Spent today</span>
+          <span class="lab" id="todaylab" data-t="spent_today">Spent today</span>
           <div class="figure" id="fig"><span class="cur">¥</span><span id="figv">0</span></div>
           <span class="dial-note" id="spenttoday"></span>
         </div>
@@ -659,7 +659,7 @@
       <div class="rail">
         <div class="rail-track"><div class="rail-fill" id="rail" style="width:0%"></div></div>
         <div class="rail-ends">
-          <span id="railleft">Nothing spent yet</span>
+          <span id="railleft" data-t="nothing_spent">Nothing spent yet</span>
           <span id="railright"></span>
         </div>
       </div>
@@ -673,31 +673,31 @@
   <section class="screen" id="sc-insights" role="tabpanel" aria-label="Insights">
 
     <div class="seg range" id="range">
-      <button type="button" data-days="7" aria-pressed="true">7 days</button>
-      <button type="button" data-days="30" aria-pressed="false">30 days</button>
-      <button type="button" data-days="0" aria-pressed="false">All</button>
+      <button type="button" data-days="7" aria-pressed="true" data-t="r7">7 days</button>
+      <button type="button" data-days="30" aria-pressed="false" data-t="r30">30 days</button>
+      <button type="button" data-days="0" aria-pressed="false" data-t="rall">All</button>
     </div>
 
     <div class="tiles">
       <div class="glass tile">
-        <span class="lab">Total</span>
+        <span class="lab" data-t="total">Total</span>
         <span class="tile-v" id="t-total">—</span>
         <span class="tile-sub" id="t-total-sub"></span>
       </div>
       <div class="glass tile">
-        <span class="lab">Per day</span>
+        <span class="lab" data-t="per_day">Per day</span>
         <span class="tile-v" id="t-avg">—</span>
         <span class="tile-sub" id="t-avg-sub"></span>
       </div>
       <div class="glass tile">
-        <span class="lab">Biggest</span>
+        <span class="lab" data-t="biggest">Biggest</span>
         <span class="tile-v" id="t-max">—</span>
         <span class="tile-sub" id="t-max-sub"></span>
       </div>
     </div>
 
     <div class="glass card pad" style="margin-top:10px">
-      <span class="lab">Spending by day</span>
+      <span class="lab" data-t="by_day">Spending by day</span>
       <div class="chartwrap">
         <div class="plot" id="plot"></div>
         <div class="axis"><span id="ax-a"></span><span id="ax-b"></span></div>
@@ -706,7 +706,7 @@
     </div>
 
     <div class="glass card pad" style="margin-top:10px">
-      <span class="lab">Where it goes</span>
+      <span class="lab" data-t="where">Where it goes</span>
       <div id="cats-chart" style="margin-top:12px"></div>
       <p class="owedline" id="owed"></p>
     </div>
@@ -717,7 +717,11 @@
     <div class="glass card pad">
       <div class="fields">
         <div class="fld">
-          <span class="lab">Currency you spend in</span>
+          <span class="lab" data-t="lang_lab">Language</span>
+          <select id="i-lang"></select>
+        </div>
+        <div class="fld">
+          <span class="lab" data-t="cur_spend">Currency you spend in</span>
           <select id="i-cur"></select>
         </div>
         <div class="fld">
@@ -725,12 +729,12 @@
           <input type="number" id="i-budget" inputmode="decimal" placeholder="3000" min="0" step="1">
         </div>
         <div class="pair">
-          <div class="fld"><span class="lab">From</span><input type="date" id="i-start"></div>
-          <div class="fld"><span class="lab">Until</span><input type="date" id="i-end"></div>
+          <div class="fld"><span class="lab" data-t="from">From</span><input type="date" id="i-start"></div>
+          <div class="fld"><span class="lab" data-t="until">Until</span><input type="date" id="i-end"></div>
         </div>
         <div class="pair">
           <div class="fld">
-            <span class="lab">Money came from</span>
+            <span class="lab" data-t="money_from">Money came from</span>
             <select id="i-home"></select>
           </div>
           <div class="fld">
@@ -743,29 +747,25 @@
 
     <div class="glass card pad">
       <div class="trio">
-        <span class="lab">Use on another device</span>
+        <span class="lab" data-t="pair_lab">Use on another device</span>
         <p class="foot" style="text-align:left;margin:0">
-          Your account is this code. Show it on one device, enter it on another,
-          and both keep the same entries.
+          <span data-t="pair_help"></span>
         </p>
-        <button class="minor" id="b-show" type="button">Show my code</button>
+        <button class="minor" id="b-show" type="button" data-t="show_code">Show my code</button>
         <p class="code" id="codebox" hidden></p>
-        <p class="warn" id="codewarn" hidden>
-          Anyone with this code can read and change your entries. Do not post it.
-        </p>
-        <button class="minor" id="b-enter" type="button">Enter a code from another device</button>
+        <p class="warn" id="codewarn" hidden data-t="code_warn"></p>
+        <button class="minor" id="b-enter" type="button" data-t="enter_code">Enter a code from another device</button>
       </div>
     </div>
 
     <div class="glass card pad">
       <div class="trio">
-        <span class="lab">Your data</span>
-        <button class="minor" id="b-download" type="button" hidden>Save a backup file</button>
-        <button class="minor" id="b-backup" type="button">Copy a backup</button>
-        <button class="minor" id="b-restore" type="button">Restore from a backup</button>
-        <button class="minor danger" id="b-erase" type="button">Erase everything</button>
-        <p class="foot">Everything stays on this phone. Nothing is uploaded.<br>
-        Safari erases app data after 7 days without opening it — keep a backup.</p>
+        <span class="lab" data-t="your_data">Your data</span>
+        <button class="minor" id="b-download" type="button" hidden data-t="save_backup">Save a backup file</button>
+        <button class="minor" id="b-backup" type="button" data-t="copy_backup">Copy a backup</button>
+        <button class="minor" id="b-restore" type="button" data-t="restore">Restore from a backup</button>
+        <button class="minor danger" id="b-erase" type="button" data-t="erase">Erase everything</button>
+        <p class="foot" data-t="data_note"></p>
       </div>
     </div>
   </section>
@@ -788,14 +788,14 @@
   <!-- scrolls when the screen is short -->
   <div class="sheet-mid">
     <div class="seg" id="whopaid">
-      <button type="button" data-paid="me" aria-pressed="true">I paid</button>
-      <button type="button" data-paid="them" aria-pressed="false">Someone else paid</button>
+      <button type="button" data-paid="me" aria-pressed="true" data-t="i_paid">I paid</button>
+      <button type="button" data-paid="them" aria-pressed="false" data-t="they_paid_btn">Someone else paid</button>
     </div>
 
     <div class="cats" id="cats"></div>
 
     <div class="splitbar">
-      <span class="lab">Split between</span>
+      <span class="lab" data-t="split_between">Split between</span>
       <div class="stepper">
         <button type="button" id="minus" aria-label="Fewer people">−</button>
         <span class="n" id="ways">just me</span>
@@ -804,10 +804,10 @@
     </div>
 
     <input class="noteinput" id="note" type="text" maxlength="60"
-           placeholder="What was it? (optional)" autocomplete="off" enterkeyhint="done">
+           data-tph="note_ph" autocomplete="off" enterkeyhint="done">
 
     <div class="whenrow">
-      <span class="lab">When</span>
+      <span class="lab" data-t="when">When</span>
       <input type="date" id="when" aria-label="Date of this spend">
     </div>
   </div>
@@ -815,13 +815,13 @@
   <!-- pinned: keypad and Save stay under the thumb -->
   <div class="sheet-foot">
     <div class="keys" id="keys"></div>
-    <button class="commit" id="commit" disabled>Save</button>
+    <button class="commit" id="commit" disabled data-t="save">Save</button>
   </div>
 </section>
 
 <div class="toast" id="toast" role="status" aria-live="polite">
   <span id="toasttext">Deleted</span>
-  <button type="button" id="undo">Undo</button>
+  <button type="button" id="undo" data-t="undo">Undo</button>
 </div>
 
 <script>
@@ -872,14 +872,307 @@
   };
 
   var TABS = [
-    { id: "today",  label: "Today",  title: "Today" },
-    { id: "log",    label: "Log",    title: "Spending" },
-    { id: "add",    label: "Add",    title: "Add" },
-    { id: "insights", label: "Charts", title: "Insights" },
-    { id: "budget", label: "Budget", title: "Budget" }
+    { id: "today",    key: "today" },
+    { id: "log",      key: "spending" },
+    { id: "add",      key: "add" },
+    { id: "insights", key: "insights" },
+    { id: "budget",   key: "budget" }
   ];
 
   var $ = function (id) { return document.getElementById(id); };
+
+  // ═══════ language ═══════
+  //
+  // The app was English-only, which made it work in the head of nobody it was
+  // built for. Friends at a Chinese campus, from Central Asia, reading English
+  // as a second or third language while standing at a checkout.
+  //
+  // Keys are English shorthand. {braces} are filled at call time. A value that
+  // is an array is a plural form, chosen by the language's own rule — Russian
+  // needs three, Uzbek and Chinese need one, and getting that wrong is exactly
+  // what makes an app feel translated rather than written.
+
+  var I18N = {
+    en: {
+      today: "Today", spending: "Spending", add: "Add", insights: "Insights", budget: "Budget",
+      spent_today: "Spent today", period_over_lab: "Period finished", over_today_lab: "Over today by",
+      same_as_yesterday: "same as yesterday",
+      less_than_yesterday: "{v} less than yesterday",
+      more_than_yesterday: "{v} more than yesterday",
+      avg_a_day: "avg {v} a day",
+      sub_no_budget: "Open Budget and enter how much money you have.",
+      sub_ended: "That period is over — <b>{spent}</b> spent of {budget}. Set new dates in Budget.",
+      sub_over: "Over today's <b>{limit}</b> by {by}. Tomorrow adjusts on its own.",
+      sub_left: "<b>{left}</b> left of today's {limit}, over {days}.",
+      sub_tracking: "<b>{spent}</b> over {days}. Add a budget in Budget if you want a daily limit.",
+      sub_empty: "Tap + the next time you pay for something.",
+      spent_of: "Spent <b>{v}</b> of <b>{b}</b>", spent_so_far: "Spent <b>{v}</b> so far",
+      days_left: "<b>{n}</b> days left", days_tracked: "<b>{n}</b> {unit} tracked",
+      nothing_spent: "Nothing spent yet",
+      streak_run: "{n} days in a row", streak_of7: "{n} of the last 7 days",
+      log_empty: "Nothing logged yet.<br>Tap + when you pay for something.",
+      chart_empty: "Nothing to chart yet.<br>Log a few days and come back.",
+      owed_line: "Friends owe you {a} · you owe {b}",
+      yesterday: "Yesterday", split_ways: "split {n} ways", they_paid: "they paid",
+      total: "Total", per_day: "Per day", biggest: "Biggest", nothing_yet: "nothing yet",
+      by_day: "Spending by day", where: "Where it goes",
+      r7: "7 days", r30: "30 days", rall: "All", active_days: "{n} active {unit}",
+      i_paid: "I paid", they_paid_btn: "Someone else paid", split_between: "Split between",
+      just_me: "just me", people: "{n} people", when: "When", save: "Save",
+      save_share: "Save · your share {v}", note_ph: "What was it? (optional)",
+      cur_spend: "Currency you spend in", money_have: "Money you have, in {sym} · optional",
+      from: "From", until: "Until", money_from: "Money came from", one_equals: "1 {sym} equals",
+      lang_lab: "Language",
+      pair_lab: "Use on another device",
+      pair_help: "Your account is this code. Show it on one device, enter it on another, and both keep the same entries.",
+      show_code: "Show my code", hide_code: "Hide my code",
+      code_warn: "Anyone with this code can read and change your entries. Do not post it.",
+      enter_code: "Enter a code from another device",
+      your_data: "Your data", copy_backup: "Copy a backup", save_backup: "Save a backup file",
+      restore: "Restore from a backup", erase: "Erase everything",
+      data_note: "Everything stays on this phone. Nothing is uploaded.<br>Safari erases app data after 7 days without opening it — keep a backup.",
+      undo: "Undo", deleted: "Deleted {v}",
+      entries_n: "{n} {unit}", entry_unit: ["entry", "entries"], day_unit: ["day", "days"],
+      f_too_large: "Backup is too big to save as a file", f_no_file: "File saving isn't available here — use Copy a backup",
+      f_saved: "Backup saved", f_copied: "Backup copied — paste it somewhere safe",
+      f_nothing_backup: "Nothing to back up yet", f_bad_backup: "That isn't a valid backup",
+      f_restored: "Restored {n} entries", f_nothing_erase: "Nothing to erase", f_erased: "Erased",
+      f_code_copied: "Code copied", f_bad_code: "That does not look like a code",
+      f_same_code: "This device already uses that code", f_joined: "Joined — syncing",
+      f_no_save: "Storage is full or blocked", f_retry: "Try that again in a moment",
+      c_restore: "Replace everything on this phone with that backup?",
+      c_erase: "Erase your budget and all {n} entries? This cannot be undone.",
+      c_join_merge: "Join that account?\n\nThe {n} entries on this device will be merged into it.",
+      c_join: "Join that account and pull its entries onto this device?",
+      p_paste_backup: "Paste your backup here:", p_paste_code: "Paste the code from your other device:"
+    },
+
+    ru: {
+      today: "Сегодня", spending: "Расходы", add: "Добавить", insights: "Аналитика", budget: "Бюджет",
+      spent_today: "Потрачено сегодня", period_over_lab: "Период закончился", over_today_lab: "Перерасход",
+      same_as_yesterday: "как вчера",
+      less_than_yesterday: "на {v} меньше, чем вчера",
+      more_than_yesterday: "на {v} больше, чем вчера",
+      avg_a_day: "в среднем {v} в день",
+      sub_no_budget: "Откройте Бюджет и укажите, сколько у вас денег.",
+      sub_ended: "Период закончился — потрачено <b>{spent}</b> из {budget}. Задайте новые даты в Бюджете.",
+      sub_over: "Больше сегодняшних <b>{limit}</b> на {by}. Завтра пересчитается само.",
+      sub_left: "Осталось <b>{left}</b> из сегодняшних {limit}, на {days}.",
+      sub_tracking: "<b>{spent}</b> за {days}. Добавьте бюджет, если нужен дневной лимит.",
+      sub_empty: "Нажмите + в следующий раз, когда что-то оплатите.",
+      spent_of: "Потрачено <b>{v}</b> из <b>{b}</b>", spent_so_far: "Потрачено <b>{v}</b>",
+      days_left: "осталось <b>{n}</b> дн.", days_tracked: "<b>{n}</b> {unit}",
+      nothing_spent: "Пока ничего",
+      streak_run: "{n} дня подряд", streak_of7: "{n} из последних 7 дней",
+      log_empty: "Пока пусто.<br>Нажмите +, когда что-то оплатите.",
+      chart_empty: "Пока нечего показать.<br>Записывайте несколько дней и возвращайтесь.",
+      owed_line: "Вам должны {a} · вы должны {b}",
+      yesterday: "Вчера", split_ways: "на {n} человек", they_paid: "платил не я",
+      total: "Всего", per_day: "В день", biggest: "Максимум", nothing_yet: "пока нет",
+      by_day: "Расходы по дням", where: "На что уходит",
+      r7: "7 дней", r30: "30 дней", rall: "Всё", active_days: "{n} {unit} с тратами",
+      i_paid: "Платил я", they_paid_btn: "Платил кто-то другой", split_between: "Делим на",
+      just_me: "только я", people: "{n} чел.", when: "Когда", save: "Сохранить",
+      save_share: "Сохранить · ваша доля {v}", note_ph: "Что это было? (необязательно)",
+      cur_spend: "Валюта, в которой тратите", money_have: "Сколько у вас денег, в {sym} · необязательно",
+      from: "С", until: "До", money_from: "Деньги пришли в", one_equals: "1 {sym} равен",
+      lang_lab: "Язык",
+      pair_lab: "Использовать на другом устройстве",
+      pair_help: "Ваш аккаунт — это код. Покажите его на одном устройстве, введите на другом, и записи будут общими.",
+      show_code: "Показать код", hide_code: "Скрыть код",
+      code_warn: "Любой, у кого есть код, сможет читать и менять ваши записи. Не публикуйте его.",
+      enter_code: "Ввести код с другого устройства",
+      your_data: "Ваши данные", copy_backup: "Скопировать резервную копию", save_backup: "Сохранить файл копии",
+      restore: "Восстановить из копии", erase: "Удалить всё",
+      data_note: "Всё хранится на этом телефоне. Ничего не загружается.<br>Safari стирает данные через 7 дней без открытия — держите копию.",
+      undo: "Вернуть", deleted: "Удалено {v}",
+      entries_n: "{n} {unit}", entry_unit: ["запись", "записи", "записей"], day_unit: ["день", "дня", "дней"],
+      f_too_large: "Копия слишком большая для файла", f_no_file: "Сохранение файла здесь недоступно — скопируйте копию",
+      f_saved: "Копия сохранена", f_copied: "Копия скопирована — сохраните её в надёжном месте",
+      f_nothing_backup: "Пока нечего сохранять", f_bad_backup: "Это не похоже на резервную копию",
+      f_restored: "Восстановлено записей: {n}", f_nothing_erase: "Нечего удалять", f_erased: "Удалено",
+      f_code_copied: "Код скопирован", f_bad_code: "Это не похоже на код",
+      f_same_code: "На этом устройстве уже этот код", f_joined: "Подключено — синхронизация",
+      f_no_save: "Память переполнена или заблокирована", f_retry: "Попробуйте ещё раз через момент",
+      c_restore: "Заменить все данные на этом телефоне этой копией?",
+      c_erase: "Удалить бюджет и все записи ({n})? Это нельзя отменить.",
+      c_join_merge: "Подключиться к этому аккаунту?\n\nЗаписи на этом устройстве ({n}) будут объединены с ним.",
+      c_join: "Подключиться к аккаунту и загрузить его записи на это устройство?",
+      p_paste_backup: "Вставьте резервную копию:", p_paste_code: "Вставьте код с другого устройства:"
+    },
+
+    uz: {
+      today: "Bugun", spending: "Xarajatlar", add: "Qo'shish", insights: "Tahlil", budget: "Byudjet",
+      spent_today: "Bugun sarflandi", period_over_lab: "Davr tugadi", over_today_lab: "Ortiqcha sarf",
+      same_as_yesterday: "kechagidek",
+      less_than_yesterday: "kechagidan {v} kam",
+      more_than_yesterday: "kechagidan {v} ko'p",
+      avg_a_day: "kuniga o'rtacha {v}",
+      sub_no_budget: "Byudjetni oching va qancha pulingiz borligini kiriting.",
+      sub_ended: "Bu davr tugadi — {budget} dan <b>{spent}</b> sarflandi. Byudjetda yangi sana qo'ying.",
+      sub_over: "Bugungi <b>{limit}</b> dan {by} ortiq. Ertaga o'zi qayta hisoblanadi.",
+      sub_left: "Bugungi {limit} dan <b>{left}</b> qoldi, {days} uchun.",
+      sub_tracking: "{days} ichida <b>{spent}</b>. Kunlik chegara kerak bo'lsa, byudjet qo'shing.",
+      sub_empty: "Keyingi safar to'lov qilganingizda + ni bosing.",
+      spent_of: "<b>{b}</b> dan <b>{v}</b> sarflandi", spent_so_far: "Hozircha <b>{v}</b> sarflandi",
+      days_left: "<b>{n}</b> kun qoldi", days_tracked: "<b>{n}</b> {unit} kuzatildi",
+      nothing_spent: "Hozircha yo'q",
+      streak_run: "{n} kun ketma-ket", streak_of7: "oxirgi 7 kundan {n} tasi",
+      log_empty: "Hozircha bo'sh.<br>To'lov qilganingizda + ni bosing.",
+      chart_empty: "Hozircha ko'rsatadigan narsa yo'q.<br>Bir necha kun yozing va qayting.",
+      owed_line: "Sizga {a} qarz · siz {b} qarzdorsiz",
+      yesterday: "Kecha", split_ways: "{n} kishiga bo'lindi", they_paid: "boshqa odam to'ladi",
+      total: "Jami", per_day: "Kuniga", biggest: "Eng ko'p", nothing_yet: "hozircha yo'q",
+      by_day: "Kunlar bo'yicha", where: "Nimaga ketyapti",
+      r7: "7 kun", r30: "30 kun", rall: "Hammasi", active_days: "{n} {unit} xarajat bilan",
+      i_paid: "Men to'ladim", they_paid_btn: "Boshqa odam to'ladi", split_between: "Bo'lish",
+      just_me: "faqat men", people: "{n} kishi", when: "Qachon", save: "Saqlash",
+      save_share: "Saqlash · sizning ulushingiz {v}", note_ph: "Bu nima edi? (ixtiyoriy)",
+      cur_spend: "Sarflaydigan valyutangiz", money_have: "Qancha pulingiz bor, {sym} · ixtiyoriy",
+      from: "Dan", until: "Gacha", money_from: "Pul qaysi valyutada keldi", one_equals: "1 {sym} teng",
+      lang_lab: "Til",
+      pair_lab: "Boshqa qurilmada ishlatish",
+      pair_help: "Hisobingiz — shu kod. Bir qurilmada ko'rsating, boshqasida kiriting, yozuvlar umumiy bo'ladi.",
+      show_code: "Kodimni ko'rsatish", hide_code: "Kodni yashirish",
+      code_warn: "Kodga ega har kim yozuvlaringizni o'qiy va o'zgartira oladi. Uni e'lon qilmang.",
+      enter_code: "Boshqa qurilmadagi kodni kiriting",
+      your_data: "Ma'lumotlaringiz", copy_backup: "Nusxani ko'chirish", save_backup: "Nusxa faylini saqlash",
+      restore: "Nusxadan tiklash", erase: "Hammasini o'chirish",
+      data_note: "Hammasi shu telefonda qoladi. Hech narsa yuklanmaydi.<br>Safari 7 kun ochilmasa ma'lumotni o'chiradi — nusxa saqlang.",
+      undo: "Qaytarish", deleted: "{v} o'chirildi",
+      entries_n: "{n} {unit}", entry_unit: ["yozuv"], day_unit: ["kun"],
+      f_too_large: "Nusxa fayl uchun juda katta", f_no_file: "Bu yerda faylni saqlab bo'lmaydi — nusxani ko'chiring",
+      f_saved: "Nusxa saqlandi", f_copied: "Nusxa ko'chirildi — xavfsiz joyga qo'ying",
+      f_nothing_backup: "Hozircha saqlaydigan narsa yo'q", f_bad_backup: "Bu haqiqiy nusxaga o'xshamaydi",
+      f_restored: "{n} ta yozuv tiklandi", f_nothing_erase: "O'chiradigan narsa yo'q", f_erased: "O'chirildi",
+      f_code_copied: "Kod ko'chirildi", f_bad_code: "Bu kodga o'xshamaydi",
+      f_same_code: "Bu qurilmada allaqachon shu kod", f_joined: "Ulandi — sinxronlanmoqda",
+      f_no_save: "Xotira to'lgan yoki bloklangan", f_retry: "Bir ozdan keyin qayta urinib ko'ring",
+      c_restore: "Bu telefondagi hamma narsani shu nusxa bilan almashtirilsinmi?",
+      c_erase: "Byudjet va barcha {n} ta yozuv o'chirilsinmi? Buni qaytarib bo'lmaydi.",
+      c_join_merge: "Bu hisobga ulanilsinmi?\n\nBu qurilmadagi {n} ta yozuv unga qo'shiladi.",
+      c_join: "Bu hisobga ulanib, yozuvlarini shu qurilmaga yuklab olinsinmi?",
+      p_paste_backup: "Nusxani shu yerga joylashtiring:", p_paste_code: "Boshqa qurilmadagi kodni joylashtiring:"
+    },
+
+    zh: {
+      today: "今天", spending: "支出", add: "记一笔", insights: "统计", budget: "预算",
+      spent_today: "今天花了", period_over_lab: "周期已结束", over_today_lab: "今天超支",
+      same_as_yesterday: "和昨天一样",
+      less_than_yesterday: "比昨天少 {v}",
+      more_than_yesterday: "比昨天多 {v}",
+      avg_a_day: "平均每天 {v}",
+      sub_no_budget: "打开预算，填入你有多少钱。",
+      sub_ended: "这个周期结束了 — {budget} 中花了 <b>{spent}</b>。在预算里设置新日期。",
+      sub_over: "超出今天的 <b>{limit}</b> 共 {by}。明天会自动调整。",
+      sub_left: "今天的 {limit} 还剩 <b>{left}</b>，共 {days}。",
+      sub_tracking: "{days}内花了 <b>{spent}</b>。想要每日额度就去预算里加一个。",
+      sub_empty: "下次付钱的时候点一下 +。",
+      spent_of: "已花 <b>{v}</b>，共 <b>{b}</b>", spent_so_far: "目前已花 <b>{v}</b>",
+      days_left: "还剩 <b>{n}</b> 天", days_tracked: "已记录 <b>{n}</b> 天",
+      nothing_spent: "还没有支出",
+      streak_run: "连续 {n} 天", streak_of7: "最近 7 天里记了 {n} 天",
+      log_empty: "还没有记录。<br>付钱的时候点 +。",
+      chart_empty: "还没有数据。<br>记几天再回来看。",
+      owed_line: "朋友欠你 {a} · 你欠 {b}",
+      yesterday: "昨天", split_ways: "{n} 人平摊", they_paid: "别人付的",
+      total: "合计", per_day: "每天", biggest: "最多的一天", nothing_yet: "还没有",
+      by_day: "每天的支出", where: "钱花在哪",
+      r7: "7 天", r30: "30 天", rall: "全部", active_days: "{n} 天有支出",
+      i_paid: "我付的", they_paid_btn: "别人付的", split_between: "平摊人数",
+      just_me: "只有我", people: "{n} 人", when: "日期", save: "保存",
+      save_share: "保存 · 你的份额 {v}", note_ph: "买了什么？（可不填）",
+      cur_spend: "你消费的货币", money_have: "你有多少钱，{sym} · 可不填",
+      from: "从", until: "到", money_from: "钱来自", one_equals: "1 {sym} 等于",
+      lang_lab: "语言",
+      pair_lab: "在其他设备上使用",
+      pair_help: "这个码就是你的账号。在一台设备上显示，在另一台上输入，记录就同步了。",
+      show_code: "显示我的码", hide_code: "隐藏",
+      code_warn: "拿到这个码的人可以读取和修改你的记录。不要公开。",
+      enter_code: "输入另一台设备上的码",
+      your_data: "你的数据", copy_backup: "复制备份", save_backup: "保存备份文件",
+      restore: "从备份恢复", erase: "清除全部",
+      data_note: "全部留在这台手机上，不会上传。<br>Safari 会在 7 天不打开后清除数据 — 留个备份。",
+      undo: "撤销", deleted: "已删除 {v}",
+      entries_n: "{n} 条", entry_unit: ["条"], day_unit: ["天"],
+      f_too_large: "备份太大，无法保存为文件", f_no_file: "这里不能保存文件 — 请用复制备份",
+      f_saved: "备份已保存", f_copied: "备份已复制 — 存到安全的地方",
+      f_nothing_backup: "还没有可备份的内容", f_bad_backup: "这不是有效的备份",
+      f_restored: "已恢复 {n} 条记录", f_nothing_erase: "没有可清除的内容", f_erased: "已清除",
+      f_code_copied: "码已复制", f_bad_code: "这看起来不像一个码",
+      f_same_code: "这台设备已经在用这个码", f_joined: "已连接 — 同步中",
+      f_no_save: "存储已满或被阻止", f_retry: "过一会儿再试",
+      c_restore: "用这个备份替换这台手机上的全部数据？",
+      c_erase: "清除预算和全部 {n} 条记录？无法撤销。",
+      c_join_merge: "要连接那个账号吗？\n\n这台设备上的 {n} 条记录会合并进去。",
+      c_join: "连接那个账号并把它的记录下载到这台设备？",
+      p_paste_backup: "把备份粘贴到这里：", p_paste_code: "粘贴另一台设备上的码："
+    }
+  };
+
+  var LANGS = [["en", "English"], ["ru", "Русский"], ["uz", "O'zbek"], ["zh", "中文"]];
+  var LOCALE = { en: "en", ru: "ru", uz: "uz-Latn", zh: "zh-CN" };
+
+  // Russian needs three plural forms and picks by the last digits. Uzbek and
+  // Chinese do not inflect after a numeral at all.
+  var PLURAL = {
+    en: function (n) { return n === 1 ? 0 : 1; },
+    ru: function (n) {
+      var a = n % 10, b = n % 100;
+      if (a === 1 && b !== 11) return 0;
+      if (a >= 2 && a <= 4 && !(b >= 12 && b <= 14)) return 1;
+      return 2;
+    },
+    uz: function () { return 0; },
+    zh: function () { return 0; }
+  };
+
+  function detectLang() {
+    var l = (navigator.language || "en").toLowerCase();
+    if (l.indexOf("ru") === 0) return "ru";
+    if (l.indexOf("uz") === 0) return "uz";
+    if (l.indexOf("zh") === 0) return "zh";
+    return "en";
+  }
+
+  function fill(str, vars) {
+    if (!vars) return str;
+    return str.replace(/\{(\w+)\}/g, function (_, k) {
+      return vars[k] == null ? "" : vars[k];
+    });
+  }
+
+  function t(key, vars) {
+    var pack = I18N[db.lang] || I18N.en;
+    var v = pack[key];
+    if (v === undefined) v = I18N.en[key];
+    if (v === undefined) return key;
+    return fill(v, vars);
+  }
+
+  /** Plural-aware. `unit` keys hold an array of forms. */
+  function unit(key, n) {
+    var pack = I18N[db.lang] || I18N.en;
+    var forms = pack[key] || I18N.en[key];
+    if (!Array.isArray(forms)) return forms || key;
+    var pick = (PLURAL[db.lang] || PLURAL.en)(n);
+    return forms[pick] !== undefined ? forms[pick] : forms[0];
+  }
+
+  function locale() { return LOCALE[db.lang] || "en"; }
+
+  /** Everything with a data-t attribute, in one pass. */
+  function paintStatic() {
+    document.querySelectorAll("[data-t]").forEach(function (el) {
+      el.innerHTML = t(el.getAttribute("data-t"));
+    });
+    document.querySelectorAll("[data-tph]").forEach(function (el) {
+      el.placeholder = t(el.getAttribute("data-tph"));
+    });
+    if (document.documentElement) document.documentElement.lang = db.lang;
+  }
+
+
 
   var calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -936,7 +1229,7 @@
 
   function blank() {
     return { budget: 0, start: today(), end: null, cur: "CNY", home: "UZS", rate: 0,
-             items: [], tombstones: [], cursor: null, deviceKey: null };
+             lang: detectLang(), items: [], tombstones: [], cursor: null, deviceKey: null };
   }
 
   function load() {
@@ -949,6 +1242,7 @@
       base.budget = Number(p.budget) || 0;
       base.start = typeof p.start === "string" ? p.start : today();
       base.end = typeof p.end === "string" && p.end ? p.end : null;
+      base.lang = I18N[p.lang] ? p.lang : detectLang();
       base.cur = CUR_BY[p.cur] ? p.cur : "CNY";
       base.home = (CUR_BY[p.home] || p.home === "NONE") ? p.home : "UZS";
       base.rate = Number(p.rate) || 0;
@@ -982,7 +1276,7 @@
 
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(db)); }
-    catch (err) { flash("Couldn't save — storage is full or blocked", false); }
+    catch (err) { flash(t("f_no_save"), false); }
   }
 
   // ───────── helpers ─────────
@@ -1168,20 +1462,27 @@
   var tabsEl = $("tabs");
   var current = "today";
 
-  TABS.forEach(function (t) {
-    var b = document.createElement("button");
-    b.className = "tab" + (t.id === "add" ? " mid" : "");
-    b.type = "button";
-    b.setAttribute("role", "tab");
-    b.setAttribute("data-id", t.id);
-    b.setAttribute("aria-selected", t.id === "today" ? "true" : "false");
-    // icon only — the name lives in the accessible name, not on screen
-    b.setAttribute("aria-label", t.label);
-    b.title = t.label;
-    var svg = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICON[t.id === "add" ? "plus" : t.id] + "</svg>";
-    b.innerHTML = t.id === "add" ? '<span class="ring">' + svg + "</span>" : svg;
-    tabsEl.appendChild(b);
-  });
+  // Rebuilt when the language changes: the tab names live in the accessible
+  // name, so they have to be translated too or a screen reader stays English.
+  function buildTabs() {
+    var selected = current;
+    tabsEl.innerHTML = "";
+    TABS.forEach(function (tab) {
+      var b = document.createElement("button");
+      b.className = "tab" + (tab.id === "add" ? " mid" : "");
+      b.type = "button";
+      b.setAttribute("role", "tab");
+      b.setAttribute("data-id", tab.id);
+      b.setAttribute("aria-selected", tab.id === selected ? "true" : "false");
+      // icon only — the name lives in the accessible name, not on screen
+      b.setAttribute("aria-label", t(tab.key));
+      b.title = t(tab.key);
+      var svg = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICON[tab.id === "add" ? "plus" : tab.id] + "</svg>";
+      b.innerHTML = tab.id === "add" ? '<span class="ring">' + svg + "</span>" : svg;
+      tabsEl.appendChild(b);
+    });
+  }
+  buildTabs();
 
   tabsEl.addEventListener("click", function (e) {
     var b = e.target.closest ? e.target.closest(".tab") : null;
@@ -1199,8 +1500,8 @@
     Array.prototype.forEach.call(tabsEl.children, function (b) {
       b.setAttribute("aria-selected", b.getAttribute("data-id") === id ? "true" : "false");
     });
-    var meta = TABS.filter(function (t) { return t.id === id; })[0];
-    $("bartitle").textContent = meta ? meta.title : "Today";
+    var meta = TABS.filter(function (x) { return x.id === id; })[0];
+    $("bartitle").textContent = meta ? t(meta.key) : t("today");
     window.scrollTo(0, 0);
     tabsEl.classList.remove("min");
   }
@@ -1248,7 +1549,7 @@
     $("arc").style.strokeDashoffset = (ARC * (1 - ratio)).toFixed(1);
     $("arc").classList.toggle("over", over);
 
-    $("todaylab").textContent = "Spent today";
+    $("todaylab").textContent = t("spent_today");
 
     // Yesterday is the comparison that means something. An average is a
     // statistic; "less than yesterday" is a fact about you.
@@ -1261,10 +1562,10 @@
     if (yAny && s.todaySpent > 0) {
       var d = s.todaySpent - yTotal;
       $("spenttoday").textContent = Math.abs(d) < 0.005
-        ? "same as yesterday"
-        : money(Math.abs(d)) + (d < 0 ? " less" : " more") + " than yesterday";
+        ? t("same_as_yesterday")
+        : t(d < 0 ? "less_than_yesterday" : "more_than_yesterday", { v: money(Math.abs(d)) });
     } else if (s.avg > 0) {
-      $("spenttoday").textContent = "avg " + money(s.avg) + " a day";
+      $("spenttoday").textContent = t("avg_a_day", { v: money(s.avg) });
     } else {
       $("spenttoday").textContent = "";
     }
@@ -1272,34 +1573,35 @@
     paintWeek();
 
     if (s.ended) {
-      $("figsub").innerHTML = "That period is over — <b>" + money(s.spent) + "</b> spent of " +
-        money(db.budget) + ". Set new dates in Budget.";
+      $("figsub").innerHTML = t("sub_ended", { spent: money(s.spent), budget: money(db.budget) });
     } else if (over) {
-      $("figsub").innerHTML = "Over today's <b>" + money(s.perDay) + "</b> by " +
-        money(-s.stillToday) + ". Tomorrow adjusts on its own.";
+      $("figsub").innerHTML = t("sub_over", { limit: money(s.perDay), by: money(-s.stillToday) });
     } else if (hasBudget) {
-      $("figsub").innerHTML = "<b>" + money(s.stillToday) + "</b> left of today's " +
-        money(s.perDay) + ", over " + s.days + (s.days === 1 ? " day" : " days") + ".";
+      $("figsub").innerHTML = t("sub_left", {
+        left: money(s.stillToday), limit: money(s.perDay),
+        days: s.days + " " + unit("day_unit", s.days)
+      });
     } else if (s.spent > 0) {
-      $("figsub").innerHTML = "<b>" + money(s.spent) + "</b> over " + s.elapsed +
-        (s.elapsed === 1 ? " day" : " days") + ". Add a budget in Budget if you want a daily limit.";
+      $("figsub").innerHTML = t("sub_tracking", {
+        spent: money(s.spent), days: s.elapsed + " " + unit("day_unit", s.elapsed)
+      });
     } else {
-      $("figsub").textContent = "Tap + the next time you pay for something.";
+      $("figsub").textContent = t("sub_empty");
     }
 
     if (hasBudget || s.ended) {
       var pct = Math.min(100, Math.max(0, (s.spent / db.budget) * 100));
       $("rail").style.width = pct + "%";
-      $("railleft").innerHTML = "Spent <b>" + money(s.spent) + "</b> of <b>" + money(db.budget) + "</b>";
-      $("railright").innerHTML = "<b>" + (s.ended ? "0" : s.days) + "</b> days left";
+      $("railleft").innerHTML = t("spent_of", { v: money(s.spent), b: money(db.budget) });
+      $("railright").innerHTML = t("days_left", { n: s.ended ? "0" : s.days });
     } else {
       $("rail").style.width = "0%";
-      $("railleft").innerHTML = "Spent <b>" + money(s.spent) + "</b> so far";
-      $("railright").innerHTML = "<b>" + s.elapsed + "</b> " + (s.elapsed === 1 ? "day" : "days") + " tracked";
+      $("railleft").innerHTML = t("spent_so_far", { v: money(s.spent) });
+      $("railright").innerHTML = t("days_tracked", { n: s.elapsed, unit: unit("day_unit", s.elapsed) });
     }
 
     $("barnote").textContent = db.items.length
-      ? db.items.length + (db.items.length === 1 ? " entry" : " entries") : "";
+      ? t("entries_n", { n: db.items.length, unit: unit("entry_unit", db.items.length) }) : "";
 
   }
 
@@ -1331,24 +1633,23 @@
     var logged = days.filter(function (k) { return hit[k]; }).length;
 
     $("weeknote").textContent = !logged ? ""
-      : run >= 2 ? run + " days in a row"
-      : logged + " of the last 7 days";
+      : run >= 2 ? t("streak_run", { n: run })
+      : t("streak_of7", { n: logged });
   }
 
   function friendlyDay(stamp) {
-    var t = today();
     var y = new Date(Date.now() - DAY_MS);
     var yS = y.getFullYear() + "-" + pad(y.getMonth() + 1) + "-" + pad(y.getDate());
-    if (stamp === t) return "Today";
-    if (stamp === yS) return "Yesterday";
-    return new Date(stamp + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    if (stamp === today()) return t("today");
+    if (stamp === yS) return t("yesterday");
+    return new Date(stamp + "T12:00:00").toLocaleDateString(locale(), { weekday: "short", month: "short", day: "numeric" });
   }
 
   function rowHtml(it, showDate) {
     var split = (it.ways || 1) > 1;
     var bits = [];
-    if (split) bits.push("split " + it.ways + " ways");
-    if (it.paid === "them") bits.push("they paid");
+    if (split) bits.push(t("split_ways", { n: it.ways }));
+    if (it.paid === "them") bits.push(t("they_paid"));
     if (showDate) bits.unshift(friendlyDay(dayStamp(it.ts)).toLowerCase());
     var name = it.note ? it.note : it.cat;
     if (it.note) bits.unshift(it.cat);
@@ -1362,7 +1663,7 @@
   function renderLists() {
     var list = $("list");
     if (!db.items.length) {
-      list.innerHTML = blankHtml("log", "Nothing logged yet.<br>Tap + when you pay for something.");
+      list.innerHTML = blankHtml("log", t("log_empty"));
     } else {
       var sorted = db.items.slice().sort(function (a, b) { return b.ts - a.ts; });
       var groups = [], seen = {};
@@ -1409,7 +1710,7 @@
   }
 
   function dayLabel(d) {
-    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    return d.toLocaleDateString(locale(), { month: "short", day: "numeric" });
   }
 
   function renderInsights() {
@@ -1445,11 +1746,11 @@
     var biggest = days.slice().sort(function (a, b) { return b.value - a.value; })[0];
 
     $("t-total").textContent = money(total);
-    $("t-total-sub").textContent = span + (span === 1 ? " day" : " days");
+    $("t-total-sub").textContent = span + " " + unit("day_unit", span);
     $("t-avg").textContent = money(total / span);
-    $("t-avg-sub").textContent = spent.length + " active " + (spent.length === 1 ? "day" : "days");
+    $("t-avg-sub").textContent = t("active_days", { n: spent.length, unit: unit("day_unit", spent.length) });
     $("t-max").textContent = biggest && biggest.value > 0 ? money(biggest.value) : "—";
-    $("t-max-sub").textContent = biggest && biggest.value > 0 ? dayLabel(biggest.date) : "nothing yet";
+    $("t-max-sub").textContent = biggest && biggest.value > 0 ? dayLabel(biggest.date) : t("nothing_yet");
 
     // ── bars ──
     var plot = $("plot");
@@ -1470,7 +1771,7 @@
     });
 
     $("ax-a").textContent = days.length ? dayLabel(days[0].date) : "";
-    $("ax-b").textContent = days.length ? "today" : "";
+    $("ax-b").textContent = days.length ? t("today").toLowerCase() : "";
 
     // ── category ranking ──
     var byCat = {};
@@ -1492,11 +1793,11 @@
               Math.max(3, Math.round((r.v / top) * 100)) + '%"></span></span>' +
             '<span class="catval">' + money(r.v) + "<span>" + pct + "%</span></span></div>";
         }).join("")
-      : blankHtml("insights", "Nothing to chart yet.<br>Log a few days and come back.");
+      : blankHtml("insights", t("chart_empty"));
 
     var s = stats();
     $("owed").textContent = (s.owedToMe > 0.005 || s.iOwe > 0.005)
-      ? "Friends owe you " + money(s.owedToMe) + " · you owe " + money(s.iOwe)
+      ? t("owed_line", { a: money(s.owedToMe), b: money(s.iOwe) })
       : "";
   }
 
@@ -1544,7 +1845,7 @@
     db.items.splice(idx, 1);
     db.tombstones.push({ id: id, at: Date.now() });
     save(); renderAll(true); SYNC.soon();
-    flash("Deleted " + money(myShare(pendingUndo.item)), true);
+    flash(t("deleted", { v: money(myShare(pendingUndo.item)) }), true);
   });
 
   // ───────── toast ─────────
@@ -1582,12 +1883,27 @@
       return '<option value="' + c[0] + '">' + c[0] + " · " + c[1] + "</option>";
     }).join("");
   }
+  $("i-lang").innerHTML = LANGS.map(function (l) {
+    return '<option value="' + l[0] + '">' + l[1] + "</option>";
+  }).join("");
+  $("i-lang").value = db.lang;
+
+  $("i-lang").addEventListener("change", function (e) {
+    db.lang = I18N[e.target.value] ? e.target.value : "en";
+    save();
+    paintStatic();
+    paintCurLabels();
+    buildTabs();
+    go(current);          // the header title is set by go(), not by paintStatic
+    renderAll(false);
+  });
+
   fillCur($("i-cur"), "");
   fillCur($("i-home"), '<option value="NONE">Don\'t show</option>');
 
   function paintCurLabels() {
-    $("lab-budget").textContent = "Money you have, in " + symbol() + " · optional";
-    $("lab-rate").textContent = "1 " + symbol() + " equals";
+    $("lab-budget").textContent = t("money_have", { sym: symbol() });
+    $("lab-rate").textContent = t("one_equals", { sym: symbol() });
   }
 
   $("i-cur").value = db.cur;
@@ -1630,7 +1946,7 @@
   }
 
   $("b-backup").addEventListener("click", function () {
-    copyText(JSON.stringify(db), function () { flash("Backup copied — paste it somewhere safe", false); });
+    copyText(JSON.stringify(db), function () { flash(t("f_copied"), false); });
   });
 
   // a real file, if the viewer can save one. resolves late, may be null: design for absence.
@@ -1641,31 +1957,31 @@
       var btn = $("b-download");
       btn.hidden = false;
       btn.addEventListener("click", function () {
-        if (!db.items.length && !db.budget) { flash("Nothing to back up yet", false); return; }
+        if (!db.items.length && !db.budget) { flash(t("f_nothing_backup"), false); return; }
         btn.disabled = true;
         downloads.save({
           filename: "daily-spend-" + today() + ".json",
           data: JSON.stringify(db, null, 2)
         }).then(function () {
-          flash("Backup saved", false);
+          flash(t("f_saved"), false);
         }, function (err) {
           var code = err && err.code;
           if (code === "declined") { /* the viewer said no; say nothing */ }
-          else if (code === "rate_limited") flash("Try that again in a moment", false);
-          else if (code === "too_large") flash("Backup is too big to save as a file", false);
-          else { btn.hidden = true; flash("File saving isn't available here — use Copy a backup", false); }
+          else if (code === "rate_limited") flash(t("f_retry"), false);
+          else if (code === "too_large") flash(t("f_too_large"), false);
+          else { btn.hidden = true; flash(t("f_no_file"), false); }
         }).then(function () { btn.disabled = false; });
       });
     }, function () { /* capability failed to load; the copy button still works */ });
   })();
 
   $("b-restore").addEventListener("click", function () {
-    var raw = window.prompt("Paste your backup here:");
+    var raw = window.prompt(t("p_paste_backup"));
     if (!raw) return;
     var parsed;
-    try { parsed = JSON.parse(raw); } catch (err) { flash("That isn't a valid backup", false); return; }
-    if (!parsed || !Array.isArray(parsed.items)) { flash("That isn't a valid backup", false); return; }
-    if (!window.confirm("Replace everything on this phone with that backup?")) return;
+    try { parsed = JSON.parse(raw); } catch (err) { flash(t("f_bad_backup"), false); return; }
+    if (!parsed || !Array.isArray(parsed.items)) { flash(t("f_bad_backup"), false); return; }
+    if (!window.confirm(t("c_restore"))) return;
     localStorage.setItem(KEY, JSON.stringify(parsed));
     db = load();
     $("i-budget").value = db.budget || "";
@@ -1674,7 +1990,7 @@
     $("i-home").value = db.home;
     $("i-rate").value = db.rate || "";
     renderAll(true);
-    flash("Restored " + db.items.length + " entries", false);
+    flash(t("f_restored", { n: db.items.length }), false);
   });
 
   // ── pairing ──
@@ -1693,32 +2009,29 @@
     var box = $("codebox");
     if (!box.hidden) {                       // second tap hides it again
       box.hidden = true; $("codewarn").hidden = true;
-      $("b-show").textContent = "Show my code";
+      $("b-show").textContent = t("show_code");
       return;
     }
     box.textContent = groups(db.deviceKey);
     box.hidden = false;
     $("codewarn").hidden = false;
-    $("b-show").textContent = "Hide my code";
-    copyText(db.deviceKey, function () { flash("Code copied", false); });
+    $("b-show").textContent = t("hide_code");
+    copyText(db.deviceKey, function () { flash(t("f_code_copied"), false); });
   });
 
   $("b-enter").addEventListener("click", function () {
-    var raw = window.prompt("Paste the code from your other device:");
+    var raw = window.prompt(t("p_paste_code"));
     if (!raw) return;
 
     var key = raw.replace(/\s+/g, "");
     if (!/^[A-Za-z0-9_-]{32,128}$/.test(key)) {
-      flash("That does not look like a code", false);
+      flash(t("f_bad_code"), false);
       return;
     }
-    if (key === db.deviceKey) { flash("This device already uses that code", false); return; }
+    if (key === db.deviceKey) { flash(t("f_same_code"), false); return; }
 
     var mine = db.items.length;
-    var msg = mine
-      ? "Join that account?\n\nThe " + mine + " entr" + (mine === 1 ? "y" : "ies") +
-        " on this device will be merged into it."
-      : "Join that account and pull its entries onto this device?";
+    var msg = mine ? t("c_join_merge", { n: mine }) : t("c_join");
     if (!window.confirm(msg)) return;
 
     // Adopt the key, keep local entries but mark them for upload, and rewind
@@ -1727,19 +2040,19 @@
     db.cursor = null;
     db.items.forEach(function (i) { i.dirty = true; });
     save();
-    flash("Joined — syncing", false);
+    flash(t("f_joined"), false);
     SYNC.now();
   });
 
   $("b-erase").addEventListener("click", function () {
-    if (!db.items.length && !db.budget) { flash("Nothing to erase", false); return; }
-    if (!window.confirm("Erase your budget and all " + db.items.length + " entries? This cannot be undone.")) return;
+    if (!db.items.length && !db.budget) { flash(t("f_nothing_erase"), false); return; }
+    if (!window.confirm(t("c_erase", { n: db.items.length }))) return;
     db = blank();
     save();
     $("i-budget").value = ""; $("i-start").value = today(); $("i-end").value = "";
     $("i-home").value = "UZS"; $("i-rate").value = "";
     renderAll(true);
-    flash("Erased", false);
+    flash(t("f_erased"), false);
   });
 
   // ───────── sheet ─────────
@@ -1882,12 +2195,12 @@
   function paintDraft() {
     $("amtv").textContent = draft.digits || "0";
     $("amt").classList.toggle("zero", !draft.digits);
-    $("ways").textContent = draft.ways === 1 ? "just me" : draft.ways + " people";
+    $("ways").textContent = draft.ways === 1 ? t("just_me") : t("people", { n: draft.ways });
     var a = amountOf();
     $("commit").disabled = a <= 0;
     var back = draft.when && draft.when !== today();
-    var label = "Save";
-    if (a > 0 && draft.ways > 1) label = "Save · your share " + money(a / draft.ways);
+    var label = t("save");
+    if (a > 0 && draft.ways > 1) label = t("save_share", { v: money(a / draft.ways) });
     if (back) label += " · " + friendlyDay(draft.when).toLowerCase();
     $("commit").textContent = label;
     showConv();
@@ -1976,6 +2289,7 @@
     if (!document.hidden) renderAll(false);
   });
 
+  paintStatic();
   renderAll(false);
   SYNC.start();
   document.addEventListener("visibilitychange", function () { if (!document.hidden) SYNC.soon(); });
